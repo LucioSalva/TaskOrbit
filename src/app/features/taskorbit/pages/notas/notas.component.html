@@ -1,0 +1,258 @@
+<div class="page-layout">
+  <header class="topbar d-flex align-items-center justify-content-between px-3 px-lg-4 py-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand">
+        <span class="brand-text">TaskOrbit</span>
+      </div>
+      <span class="role-pill d-none d-md-inline-block">{{ userRole() }}</span>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <div class="text-end d-none d-md-block">
+        <div class="fw-semibold text-white">{{ currentUser()?.nombre_completo }}</div>
+        <div class="text-muted small">{{ currentUser()?.username }}</div>
+      </div>
+      <button class="btn btn-ghost" type="button" (click)="logout()">
+        <i class="bi bi-box-arrow-right"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout-body">
+    <aside class="sidebar d-none d-lg-flex">
+      <div class="sidebar-shell">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <i class="bi bi-box-seam"></i>
+          </div>
+          <span class="brand-name">TaskOrbit</span>
+        </div>
+        <div class="nav-section">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+          </a>
+          <a routerLink="/proyectos" routerLinkActive="active" class="nav-link" *ngIf="isUser() || isAdmin() || isGod()">
+            <i class="bi bi-kanban"></i>
+            <span>Proyectos</span>
+          </a>
+          <a routerLink="/notas" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-journal-text"></i>
+            <span>Notas</span>
+          </a>
+          <a routerLink="/admin/usuarios" routerLinkActive="active" class="nav-link" *ngIf="isGod()">
+            <i class="bi bi-people"></i>
+            <span>Usuarios</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content p-3 p-lg-4">
+      <div class="page-wrapper">
+        <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3 mb-4">
+          <div>
+            <h2 class="text-white mb-1">Notas</h2>
+            <p class="text-muted mb-0">Notas personales e informativas</p>
+          </div>
+          <button class="btn btn-sm btn-outline-light" type="button" (click)="openNoteModal()">
+            <i class="bi bi-plus-lg"></i>
+            Agregar nota
+          </button>
+        </div>
+
+        <div class="filters glass-card p-3 p-lg-4 mb-4">
+          <div class="row g-3">
+            <div class="col-12 col-md-4">
+              <label class="text-muted small mb-1">Ámbito</label>
+              <select class="form-select form-select-sm bg-dark text-white border-0" (change)="onScopeChange($event)">
+                <option value="todas">Todas</option>
+                <option value="personal">Personales</option>
+                <option value="proyecto">Proyecto</option>
+                <option value="tarea">Tarea</option>
+                <option value="subtarea">Subtarea</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-4" *ngIf="scopeFilter() !== 'todas' && scopeFilter() !== 'personal'">
+              <label class="text-muted small mb-1">Proyecto</label>
+              <select class="form-select form-select-sm bg-dark text-white border-0" [value]="selectedProjectId() ?? ''" (change)="onProjectSelect($event)">
+                <option value="">Selecciona proyecto</option>
+                <option *ngFor="let project of projects()" [value]="project.id">{{ project.nombre }}</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-4" *ngIf="scopeFilter() === 'tarea' || scopeFilter() === 'subtarea'">
+              <label class="text-muted small mb-1">Tarea</label>
+              <select class="form-select form-select-sm bg-dark text-white border-0" [value]="selectedTaskId() ?? ''" (change)="onTaskSelect($event)">
+                <option value="">Selecciona tarea</option>
+                <option *ngFor="let task of tasks()" [value]="task.id">{{ task.nombre }}</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-4" *ngIf="scopeFilter() === 'subtarea'">
+              <label class="text-muted small mb-1">Subtarea</label>
+              <select class="form-select form-select-sm bg-dark text-white border-0" [value]="selectedSubtaskId() ?? ''" (change)="onSubtaskSelect($event)">
+                <option value="">Selecciona subtarea</option>
+                <option *ngFor="let subtask of subtasks()" [value]="subtask.id">{{ subtask.nombre }}</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-4" *ngIf="isAdminOrGod()">
+              <label class="text-muted small mb-1">Filtrar por usuario</label>
+              <input
+                type="text"
+                class="form-control form-control-sm bg-dark text-white border-0"
+                placeholder="ID de usuario"
+                [value]="userFilter()"
+                (input)="onUserFilter($event)">
+            </div>
+          </div>
+          <div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-sm btn-outline-light" type="button" (click)="applyFilters()">Aplicar filtros</button>
+          </div>
+        </div>
+
+        <div *ngIf="isLoading()" class="text-center text-muted py-5">
+          Cargando notas...
+        </div>
+
+        <div *ngIf="!isLoading() && errorMessage()" class="alert alert-danger">
+          {{ errorMessage() }}
+        </div>
+
+        <div *ngIf="!isLoading() && !errorMessage() && filteredNotes().length === 0" class="empty-state">
+          <i class="bi bi-journal-x"></i>
+          <p class="mb-0">No hay notas registradas.</p>
+        </div>
+
+        <div class="notes-grid" *ngIf="!isLoading() && !errorMessage() && filteredNotes().length > 0">
+          <div class="note-card" *ngFor="let note of filteredNotes()">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="scope-pill">{{ note.tipo }}</span>
+                <span class="scope-pill" *ngIf="note.tipo === 'actividad'">{{ note.scope }}</span>
+              </div>
+              <span class="text-muted small">ID {{ note.id }}</span>
+            </div>
+            <div class="note-title text-white mb-1">{{ note.titulo }}</div>
+            <p class="text-white small mb-2">{{ note.contenido }}</p>
+            <div class="text-muted small">Relacionado: {{ getReferenceLabel(note) }}</div>
+            <div class="text-muted small">Registrado {{ note.createdAt | date:'short' }}</div>
+            <div class="text-muted small">Usuario #{{ note.userId }}</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" *ngIf="isModalOpen()">
+    <div class="glass-modal">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h4 class="modal-title mb-0">Agregar nota</h4>
+        <button class="btn-close-custom" type="button" (click)="closeNoteModal()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="noteForm" (ngSubmit)="submitNote()">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label-glass">Título</label>
+            <input class="form-control-glass" type="text" formControlName="titulo" placeholder="Título de la nota">
+            <div class="invalid-feedback-glass" *ngIf="noteForm.get('titulo')?.touched && noteForm.get('titulo')?.invalid">
+              Ingresa un título válido.
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label-glass">Contenido</label>
+            <textarea class="form-control-glass" rows="3" formControlName="contenido" placeholder="Escribe la nota"></textarea>
+            <div class="invalid-feedback-glass" *ngIf="noteForm.get('contenido')?.touched && noteForm.get('contenido')?.invalid">
+              Ingresa un contenido válido.
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6">
+            <label class="form-label-glass">Tipo</label>
+            <select class="form-select-glass" formControlName="tipo">
+              <option value="personal">Personal</option>
+              <option value="actividad">Actividad</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-md-6" *ngIf="noteType() === 'actividad'">
+            <label class="form-label-glass">Actividad</label>
+            <select class="form-select-glass" formControlName="actividadTipo">
+              <option value="proyecto">Proyecto</option>
+              <option value="tarea">Tarea</option>
+              <option value="subtarea">Subtarea</option>
+            </select>
+          </div>
+
+          <div class="col-12" *ngIf="noteType() === 'actividad'">
+            <label class="form-label-glass">Proyecto</label>
+            <select class="form-select-glass" formControlName="proyectoId">
+              <option [ngValue]="null">Selecciona proyecto</option>
+              <option *ngFor="let project of projects()" [ngValue]="project.id">{{ project.nombre }}</option>
+            </select>
+            <div class="invalid-feedback-glass" *ngIf="noteForm.get('proyectoId')?.touched && noteForm.get('proyectoId')?.invalid">
+              Selecciona un proyecto.
+            </div>
+          </div>
+
+          <div class="col-12" *ngIf="noteType() === 'actividad' && (activityType() === 'tarea' || activityType() === 'subtarea')">
+            <label class="form-label-glass">Tarea</label>
+            <select class="form-select-glass" formControlName="tareaId">
+              <option [ngValue]="null">Selecciona tarea</option>
+              <option *ngFor="let task of formTasks()" [ngValue]="task.id">{{ task.nombre }}</option>
+            </select>
+            <div class="invalid-feedback-glass" *ngIf="noteForm.get('tareaId')?.touched && noteForm.get('tareaId')?.invalid">
+              Selecciona una tarea.
+            </div>
+          </div>
+
+          <div class="col-12" *ngIf="noteType() === 'actividad' && activityType() === 'subtarea'">
+            <label class="form-label-glass">Subtarea</label>
+            <select class="form-select-glass" formControlName="subtareaId">
+              <option [ngValue]="null">Selecciona subtarea</option>
+              <option *ngFor="let subtask of formSubtasks()" [ngValue]="subtask.id">{{ subtask.nombre }}</option>
+            </select>
+            <div class="invalid-feedback-glass" *ngIf="noteForm.get('subtareaId')?.touched && noteForm.get('subtareaId')?.invalid">
+              Selecciona una subtarea.
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-warning mt-3" *ngIf="formError()">
+          {{ formError() }}
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" class="btn btn-outline-light-glass" (click)="closeNoteModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary-neon" [disabled]="isSaving()">
+            Guardar nota
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <nav class="bottom-nav d-lg-none">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-speedometer2"></i>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/proyectos" routerLinkActive="active" class="nav-item" *ngIf="isUser() || isAdmin() || isGod()">
+      <i class="bi bi-kanban"></i>
+      <span>Proyectos</span>
+    </a>
+    <a routerLink="/notas" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-journal-text"></i>
+      <span>Notas</span>
+    </a>
+    <a routerLink="/admin/usuarios" routerLinkActive="active" class="nav-item" *ngIf="isGod()">
+      <i class="bi bi-people"></i>
+      <span>Usuarios</span>
+    </a>
+    <button class="nav-item" type="button" (click)="logout()">
+      <i class="bi bi-box-arrow-right"></i>
+      <span>Salir</span>
+    </button>
+  </nav>
+</div>

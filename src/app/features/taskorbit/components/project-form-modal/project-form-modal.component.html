@@ -1,0 +1,96 @@
+<div class="modal-overlay" *ngIf="isOpen">
+  <div class="glass-modal">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h4 class="modal-title mb-0">{{ isEditMode() ? 'Editar proyecto' : 'Nuevo proyecto' }}</h4>
+      <button class="btn-close-custom" type="button" (click)="onClose()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label-glass">Nombre</label>
+          <input class="form-control-glass" type="text" formControlName="nombre" placeholder="Nombre del proyecto">
+          <div class="invalid-feedback-glass" *ngIf="projectForm.get('nombre')?.touched && projectForm.get('nombre')?.invalid">
+            Ingresa un nombre válido.
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label-glass">Descripción</label>
+          <textarea class="form-control-glass" rows="3" formControlName="descripcion" placeholder="Describe el proyecto"></textarea>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label-glass">Prioridad</label>
+          <select class="form-select-glass" formControlName="prioridad">
+            <option *ngFor="let item of prioridades" [value]="item.value">{{ item.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-6" *ngIf="shouldShowEstado(); else defaultEstado">
+          <label class="form-label-glass">Estado</label>
+          <select class="form-select-glass" formControlName="estado">
+            <option *ngFor="let estado of estados" [value]="estado">{{ getEstadoLabel(estado) }}</option>
+          </select>
+        </div>
+        <ng-template #defaultEstado>
+          <div class="col-12 col-md-6">
+            <label class="form-label-glass">Estado</label>
+            <div class="form-control-glass">Por hacer</div>
+          </div>
+        </ng-template>
+
+        <div class="col-12">
+          <label class="form-label-glass">Usuario asignado</label>
+          <ng-container *ngIf="users.length === 1; else userSelector">
+            <div class="form-control-glass">
+              {{ users[0]?.nombre_completo }} ({{ users[0]?.username }})
+            </div>
+          </ng-container>
+          <ng-template #userSelector>
+            <select class="form-select-glass" formControlName="usuarioAsignadoId">
+              <option [ngValue]="null" disabled>Selecciona un usuario</option>
+              <option *ngFor="let user of users" [ngValue]="user.id">
+                {{ user.nombre_completo }} ({{ user.username }})
+              </option>
+            </select>
+            <div class="invalid-feedback-glass" *ngIf="projectForm.get('usuarioAsignadoId')?.touched && projectForm.get('usuarioAsignadoId')?.invalid">
+              Selecciona un usuario.
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label-glass">Fecha inicio</label>
+          <input class="form-control-glass" type="date" formControlName="fechaInicio">
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label-glass">Fecha fin</label>
+          <input class="form-control-glass" type="date" formControlName="fechaFin">
+        </div>
+
+        <div class="col-12">
+          <div class="invalid-feedback-glass" *ngIf="projectForm.errors?.['invalidRange']">
+            La fecha fin debe ser posterior a la fecha inicio.
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="text-muted small" *ngIf="businessDays() !== null">
+            Duración estimada: {{ businessDays() }} días hábiles
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-light-glass" (click)="onClose()">Cancelar</button>
+        <button type="submit" class="btn btn-primary-neon">
+          {{ isEditMode() ? 'Guardar cambios' : 'Crear proyecto' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

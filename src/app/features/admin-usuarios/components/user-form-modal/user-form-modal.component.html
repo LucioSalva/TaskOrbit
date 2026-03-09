@@ -1,0 +1,127 @@
+<div class="modal-overlay" *ngIf="isOpen">
+  <div class="glass-modal">
+    <div class="modal-header d-flex justify-content-between align-items-center mb-4">
+      <h3 class="modal-title m-0 text-white">{{ isEditMode ? 'Editar Usuario' : 'Nuevo Usuario' }}</h3>
+      <button class="btn-close-custom" (click)="onClose()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+      <div class="row g-3">
+        
+        <!-- Nombre Completo -->
+        <div class="col-12">
+          <label class="form-label-glass">Nombre Completo</label>
+          <input type="text" class="form-control-glass form-control" formControlName="nombre_completo" placeholder="Ej: Juan Pérez">
+          <div *ngIf="f['nombre_completo'].touched && f['nombre_completo'].invalid" class="invalid-feedback-glass">
+            Requerido
+          </div>
+        </div>
+
+        <!-- Username -->
+        <div class="col-md-6">
+          <label class="form-label-glass">Usuario</label>
+          <input type="text" class="form-control-glass form-control" formControlName="username" placeholder="Ej: jperez">
+          <div *ngIf="f['username'].touched && f['username'].invalid" class="invalid-feedback-glass">
+            Mínimo 4 caracteres
+          </div>
+        </div>
+
+        <!-- Teléfono -->
+        <div class="col-md-6">
+          <label class="form-label-glass">Teléfono</label>
+          <input type="text" class="form-control-glass form-control" formControlName="telefono" placeholder="10 dígitos">
+          <div *ngIf="f['telefono'].touched && f['telefono'].invalid" class="invalid-feedback-glass">
+            10 dígitos requeridos
+          </div>
+        </div>
+
+        <!-- Rol -->
+        <div class="col-md-6">
+          <label class="form-label-glass">Rol</label>
+          <select class="form-select-glass form-select" formControlName="rol">
+            <option value="" disabled>Seleccionar...</option>
+            <option *ngFor="let role of availableRoles()" [value]="role">{{ role }}</option>
+          </select>
+          <div *ngIf="f['rol'].touched && f['rol'].invalid" class="invalid-feedback-glass">
+            Rol requerido
+          </div>
+        </div>
+
+        <!-- Estado -->
+        <div class="col-md-6 d-flex align-items-center pt-4">
+          <div class="form-check form-switch custom-switch">
+            <input class="form-check-input" type="checkbox" id="activoCheck" formControlName="activo">
+            <label class="form-check-label text-light ms-2" for="activoCheck">Usuario Activo</label>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="col-md-6">
+          <label class="form-label-glass">Contraseña</label>
+          <div class="input-group">
+            <input [type]="showPassword() ? 'text' : 'password'" 
+                   class="form-control-glass form-control" 
+                   formControlName="password" 
+                   placeholder="********"
+                   [ngClass]="{'border-danger': passwordStrength() === 'weak', 'border-warning': passwordStrength() === 'medium', 'border-success': passwordStrength() === 'strong'}">
+            <button type="button" class="btn btn-outline-light-glass" (click)="togglePasswordVisibility('password')">
+              <i class="bi" [ngClass]="showPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+            </button>
+            <button type="button" class="btn btn-outline-light-glass" (click)="generateSecurePassword()" title="Generar Contraseña Segura">
+              <i class="bi bi-magic"></i>
+            </button>
+            <button type="button" class="btn btn-outline-light-glass" (click)="copyToClipboard(userForm.get('password')?.value)" title="Copiar">
+              <i class="bi bi-clipboard"></i>
+            </button>
+          </div>
+          
+          <!-- Strength Indicator -->
+          <div class="progress mt-1" style="height: 4px;" *ngIf="passwordStrength()">
+            <div class="progress-bar" role="progressbar" 
+                 [style.width]="passwordStrength() === 'weak' ? '33%' : (passwordStrength() === 'medium' ? '66%' : '100%')"
+                 [ngClass]="{'bg-danger': passwordStrength() === 'weak', 'bg-warning': passwordStrength() === 'medium', 'bg-success': passwordStrength() === 'strong'}">
+            </div>
+          </div>
+          <small class="text-white-50" *ngIf="passwordStrength()">
+            Fortaleza: 
+            <span [ngClass]="{'text-danger': passwordStrength() === 'weak', 'text-warning': passwordStrength() === 'medium', 'text-success': passwordStrength() === 'strong'}">
+              {{ passwordStrength() === 'weak' ? 'Débil' : (passwordStrength() === 'medium' ? 'Media' : 'Fuerte') }}
+            </span>
+          </small>
+
+          <div *ngIf="f['password'].touched && f['password'].invalid" class="invalid-feedback-glass d-block">
+            Mínimo 8 caracteres
+          </div>
+        </div>
+
+        <!-- Confirmar Password -->
+        <div class="col-md-6">
+          <label class="form-label-glass">Confirmar</label>
+          <div class="input-group">
+            <input [type]="showConfirmPassword() ? 'text' : 'password'" 
+                   class="form-control-glass form-control" 
+                   formControlName="confirmar_password" 
+                   placeholder="********">
+             <button type="button" class="btn btn-outline-light-glass" (click)="togglePasswordVisibility('confirm')">
+              <i class="bi" [ngClass]="showConfirmPassword() ? 'bi-eye-slash' : 'bi-eye'"></i>
+            </button>
+          </div>
+          <div *ngIf="f['confirmar_password'].touched && userForm.hasError('mismatch')" class="invalid-feedback-glass d-block">
+            Las contraseñas no coinciden
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer mt-4 pt-3 border-top border-secondary border-opacity-25 d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-light-glass" (click)="onClose()">Cancelar</button>
+        <button type="submit" class="btn btn-primary-neon" [disabled]="userForm.invalid || isLoading()">
+          <span *ngIf="isLoading()" class="spinner-border spinner-border-sm me-2"></span>
+          {{ isLoading() ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Crear Usuario') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

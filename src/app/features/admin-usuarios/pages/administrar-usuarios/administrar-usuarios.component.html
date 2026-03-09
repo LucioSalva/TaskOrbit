@@ -1,0 +1,163 @@
+<div class="admin-layout">
+  <!-- Header -->
+  <header class="header-glass d-flex justify-content-between align-items-center px-4 py-3">
+    <div class="d-flex align-items-center">
+      <div class="brand me-4">
+        <span class="brand-text">TaskOrbit</span>
+      </div>
+    </div>
+    
+    <div class="user-profile d-flex align-items-center gap-3">
+      <div class="text-end d-none d-md-block">
+        <div class="user-name text-white fw-bold">{{ authService.currentUser()?.nombre_completo }}</div>
+        <div class="user-role badge bg-primary-subtle text-primary-emphasis text-uppercase" style="font-size: 0.7rem;">
+          {{ authService.currentUser()?.rol }}
+        </div>
+      </div>
+      
+      <button class="btn btn-icon-glass" (click)="onLogout()" title="Cerrar sesión">
+        <i class="bi bi-box-arrow-right"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container-fluid p-4">
+    <div class="row mb-4 align-items-center">
+      <div class="col">
+        <h2 class="page-title text-white mb-0">Administrar Usuarios</h2>
+        <p class="text-white-50 small mt-1">Gestión integral de accesos y roles</p>
+      </div>
+      <div class="col-auto" *ngIf="canCreateUser()">
+        <button class="btn btn-primary-neon" (click)="onCreateUser()">
+          <i class="bi bi-plus-lg me-2"></i>
+          <span class="d-none d-sm-inline">Nuevo Usuario</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Users Grid/Table -->
+    <div class="glass-panel p-0 overflow-hidden">
+      <!-- Desktop Table -->
+      <div class="table-responsive d-none d-md-block">
+        <table class="table table-dark table-hover mb-0 custom-table">
+          <thead>
+            <tr>
+              <th scope="col" class="ps-4">Usuario</th>
+              <th scope="col">Nombre Completo</th>
+              <th scope="col">Teléfono</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Estado</th>
+              <th scope="col" class="text-end pe-4">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users()">
+              <td class="ps-4">
+                <div class="d-flex align-items-center">
+                  <div class="avatar-circle me-3">{{ user.username.substring(0,2).toUpperCase() }}</div>
+                  <span class="fw-medium text-white">{{ user.username }}</span>
+                </div>
+              </td>
+              <td class="text-white">{{ user.nombre_completo }}</td>
+              <td class="text-white-50">{{ user.telefono }}</td>
+              <td>
+                <span class="badge" 
+                  [ngClass]="{
+                    'bg-danger-subtle text-danger': user.rol === 'GOD',
+                    'bg-warning-subtle text-warning': user.rol === 'ADMIN',
+                    'bg-info-subtle text-info': user.rol === 'USER'
+                  }">
+                  {{ user.rol }}
+                </span>
+              </td>
+              <td>
+                <span class="status-dot" [class.active]="user.activo"></span>
+                <span class="small" [ngClass]="user.activo ? 'text-success' : 'text-muted'">
+                  {{ user.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="text-end pe-4 actions-cell">
+                <div class="actions-group">
+                  <button class="btn btn-icon btn-glass btn-action-edit" 
+                          (click)="onEditUser(user)" 
+                          [disabled]="!canEditUser(user)"
+                          title="Editar usuario">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn btn-icon btn-glass btn-action-toggle" 
+                          [class.btn-active]="user.activo"
+                          (click)="onToggleStatus(user)"
+                          [disabled]="!canEditUser(user)"
+                          [title]="user.activo ? 'Desactivar usuario' : 'Activar usuario'">
+                    <i class="bi" [class.bi-toggle-on]="user.activo" [class.bi-toggle-off]="!user.activo"></i>
+                  </button>
+                  <button class="btn btn-icon btn-glass btn-action-delete" 
+                          (click)="onDeleteUser(user)" 
+                          [disabled]="!canEditUser(user)"
+                          title="Eliminar usuario permanentemente">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards -->
+      <div class="d-md-none p-3">
+        <div class="user-card glass-card mb-3 p-3" *ngFor="let user of users()">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center">
+              <div class="avatar-circle sm me-3">{{ user.username.substring(0,2).toUpperCase() }}</div>
+              <div>
+                <h6 class="text-white mb-0">{{ user.username }}</h6>
+                <small class="text-muted">{{ user.rol }}</small>
+              </div>
+            </div>
+            <div class="status-badge">
+              <span class="status-dot" [class.active]="user.activo"></span>
+            </div>
+          </div>
+          
+          <div class="user-details mb-3">
+            <div class="row g-2">
+              <div class="col-12">
+                <small class="text-muted d-block">Nombre</small>
+                <span class="text-light">{{ user.nombre_completo }}</span>
+              </div>
+              <div class="col-6">
+                <small class="text-muted d-block">Teléfono</small>
+                <span class="text-light small">{{ user.telefono }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions-group actions-group-mobile" *ngIf="canEditUser(user)">
+            <button class="btn btn-sm btn-outline-primary flex-grow-1 btn-action-edit" (click)="onEditUser(user)">
+              Editar
+            </button>
+            <button class="btn btn-sm flex-grow-1 btn-action-toggle" 
+              [ngClass]="user.activo ? 'btn-outline-danger' : 'btn-outline-success'"
+              (click)="onToggleStatus(user)">
+              {{ user.activo ? 'Desactivar' : 'Activar' }}
+            </button>
+            <button class="btn btn-sm btn-outline-danger btn-action-delete" 
+              (click)="onDeleteUser(user)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Component -->
+  <app-user-form-modal 
+      [isOpen]="isModalOpen()" 
+      [userToEdit]="selectedUser()"
+      (close)="onModalClose()" 
+      (userSaved)="onUserSaved($event)">
+    </app-user-form-modal>
+</div>

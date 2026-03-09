@@ -1,0 +1,172 @@
+<div class="page-layout">
+  <header class="topbar d-flex align-items-center justify-content-between px-3 px-lg-4 py-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand">
+        <span class="brand-text">TaskOrbit</span>
+      </div>
+      <span class="role-pill d-none d-md-inline-block">{{ userRole() }}</span>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <div class="text-end d-none d-md-block">
+        <div class="fw-semibold text-white">{{ currentUser()?.nombre_completo }}</div>
+        <div class="text-muted small">{{ currentUser()?.username }}</div>
+      </div>
+      <button class="btn btn-ghost" type="button" (click)="logout()">
+        <i class="bi bi-box-arrow-right"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout-body">
+    <aside class="sidebar d-none d-lg-flex">
+      <div class="sidebar-shell">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <i class="bi bi-box-seam"></i>
+          </div>
+          <span class="brand-name">TaskOrbit</span>
+        </div>
+        <div class="nav-section">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+          </a>
+          <a routerLink="/proyectos" routerLinkActive="active" class="nav-link" *ngIf="isUser() || isAdmin() || isGod()">
+            <i class="bi bi-kanban"></i>
+            <span>Proyectos</span>
+          </a>
+          <a routerLink="/notas" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-journal-text"></i>
+            <span>Notas</span>
+          </a>
+          <a routerLink="/admin/usuarios" routerLinkActive="active" class="nav-link" *ngIf="isGod()">
+            <i class="bi bi-people"></i>
+            <span>Usuarios</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="page-wrapper">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+          <a class="btn btn-sm btn-outline-light" [routerLink]="['/proyectos', projectId()]">
+            <i class="bi bi-arrow-left"></i>
+            Volver al proyecto
+          </a>
+          <span class="text-muted small" *ngIf="project() as project">{{ project.nombre }}</span>
+        </div>
+
+        <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3 mb-4">
+          <div>
+            <h2 class="text-white mb-1">Tareas</h2>
+            <p class="text-muted mb-0">Listado de tareas del proyecto</p>
+          </div>
+          <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3">
+            <button class="btn btn-sm btn-outline-light" type="button" *ngIf="isAdmin() || isGod()" (click)="openCreateTask()">
+              <i class="bi bi-plus-lg"></i>
+              Nueva tarea
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="isLoading()" class="text-center text-muted py-5">
+          Cargando tareas...
+        </div>
+
+        <div *ngIf="!isLoading() && errorMessage()" class="alert alert-danger">
+          {{ errorMessage() }}
+        </div>
+
+        <div *ngIf="formError()" class="alert alert-warning">
+          {{ formError() }}
+        </div>
+
+        <div *ngIf="!isLoading() && !errorMessage() && filteredTasks().length === 0" class="empty-state">
+          <i class="bi bi-clipboard-x"></i>
+          <p class="mb-0">No hay tareas registradas.</p>
+        </div>
+
+        <div class="d-flex flex-column gap-3" *ngIf="!isLoading() && !errorMessage() && filteredTasks().length > 0">
+          <div class="task-group" *ngFor="let task of filteredTasks()">
+            <app-task-card
+              [tarea]="task"
+              [showUser]="false"
+              [canEdit]="canEditTask(task)"
+              [showEditAction]="canManageTask(task)"
+              [showDeleteAction]="canManageTask(task)"
+              [showCreateSubtaskAction]="canManageSubtask()"
+              [availableStatuses]="getTaskAvailableStatuses(task)"
+              [actionMessage]="taskMessages()[task.id]"
+              (statusChange)="onTaskStatusChange(task, $event)"
+              (edit)="openEditTask(task)"
+              (createSubtask)="openCreateSubtask(task)"
+              (remove)="onDeleteTask(task)">
+            </app-task-card>
+
+            <div class="subtasks mt-2" *ngIf="(subtasksByTask()[task.id] || []).length > 0">
+              <div class="text-muted small mb-2">Subtareas</div>
+              <div class="d-flex flex-column gap-2">
+                <app-subtask-card
+                  *ngFor="let subtask of subtasksByTask()[task.id]"
+                  [subtarea]="subtask"
+                  [canEdit]="canEditSubtask(task)"
+                  [showDeleteAction]="canManageSubtask()"
+                  [availableStatuses]="getSubtaskAvailableStatuses(subtask)"
+                  [actionMessage]="subtaskMessages()[task.id + '-' + subtask.id]"
+                  (statusChange)="onSubtaskStatusChange(task, subtask, $event)"
+                  (remove)="onDeleteSubtask(task, subtask)">
+                </app-subtask-card>
+              </div>
+            </div>
+
+            <div class="text-muted small mt-2" *ngIf="(subtasksByTask()[task.id] || []).length === 0">
+              Sin subtareas registradas.
+            </div>
+          </div>
+        </div>
+
+        <app-task-form-modal
+          [isOpen]="isModalOpen()"
+          [taskToEdit]="selectedTask()"
+          [projectId]="projectId()"
+          [mode]="'tarea'"
+          (close)="closeTaskModal()"
+          (save)="onSaveTask($event)">
+        </app-task-form-modal>
+
+        <app-task-form-modal
+          [isOpen]="isSubtaskModalOpen()"
+          [taskToEdit]="null"
+          [taskId]="selectedParentTask()?.id ?? null"
+          [mode]="'subtarea'"
+          (close)="closeSubtaskModal()"
+          (save)="onSaveSubtask($event)">
+        </app-task-form-modal>
+      </div>
+    </main>
+  </div>
+
+  <nav class="bottom-nav d-lg-none">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-speedometer2"></i>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/proyectos" routerLinkActive="active" class="nav-item" *ngIf="isUser() || isAdmin() || isGod()">
+      <i class="bi bi-kanban"></i>
+      <span>Proyectos</span>
+    </a>
+    <a routerLink="/notas" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-journal-text"></i>
+      <span>Notas</span>
+    </a>
+    <a routerLink="/admin/usuarios" routerLinkActive="active" class="nav-item" *ngIf="isGod()">
+      <i class="bi bi-people"></i>
+      <span>Usuarios</span>
+    </a>
+    <button class="nav-item" type="button" (click)="logout()">
+      <i class="bi bi-box-arrow-right"></i>
+      <span>Salir</span>
+    </button>
+  </nav>
+</div>

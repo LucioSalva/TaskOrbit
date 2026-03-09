@@ -1,0 +1,56 @@
+Resumen de entrega - TaskOrbit
+==============================
+
+Archivos creados
+- src/app/features/notifications/interfaces/notification.interface.ts
+- src/app/features/notifications/services/notification.service.ts
+- src/app/features/notifications/services/whatsapp-alert-adapter.service.ts
+- TaskOrbit_Resumen_Entrega.txt
+
+Archivos modificados
+- src/app/features/dashboard/pages/dashboard/dashboard.component.ts
+- src/app/features/dashboard/pages/dashboard/dashboard.component.html
+- src/app/features/dashboard/pages/dashboard/dashboard.component.scss
+- src/app/features/dashboard/services/dashboard-metrics.service.ts
+- src/app/features/taskorbit/pages/proyectos-listado/proyectos-listado.component.ts
+- src/app/features/taskorbit/pages/tareas-listado/tareas-listado.component.ts
+- src/app/features/taskorbit/pages/proyecto-detalle/proyecto-detalle.component.ts
+- src/app/features/taskorbit/pages/proyecto-detalle/proyecto-detalle.component.html
+- src/app/features/taskorbit/pages/notas/notas.component.ts
+
+Componentes nuevos
+- Ninguno en esta entrega
+
+Servicios nuevos
+- NotificationService
+- WhatsAppAlertAdapterService
+
+Rutas agregadas
+- Ninguna en esta entrega
+
+Partes que ya funcionan completamente
+- Autenticación con sesión persistida y protección de rutas.
+- Dashboard operativo con métricas, alertas y filtros por estado/usuario/proyecto.
+- Gestión de proyectos, tareas y subtareas con cambios de estado y validaciones.
+- Notas con filtros por ámbito y referencia.
+- Alertas internas y bandeja/historial de notificaciones.
+
+Partes preparadas para backend
+- Métricas del dashboard usan datos mock con punto de integración hacia API real.
+- Notificaciones usan persistencia local con placeholder para sincronizar vía API.
+- Adaptador de WhatsApp definido sin envío real, listo para conectar mensajería.
+
+Cómo funciona el sistema en general
+- Login guarda sesión (token y usuario) y activa guards.
+- Rutas protegidas requieren sesión, y roles restringen acceso administrativo.
+- USER ve solo información asignada; ADMIN y GOD tienen vista global.
+- Servicios consumen APIs (o mock) y actualizan el estado con signals.
+
+Flujo principal
+- Login: iniciar sesión y restaurar sesión al cargar la app.
+- Dashboard: visualizar KPIs, productividad y alertas internas.
+- Gestión de proyectos: listar, ver detalle y actualizar estados permitidos.
+- Gestión de tareas: listar por proyecto, actualizar estado y ver subtareas.
+- Gestión de subtareas: actualizar estado en contexto de su tarea.
+- Notas: filtrar por ámbito y referencia, revisar notas asociadas.
+- Dashboard de productividad: ver métricas por usuario, proyecto y tarea.

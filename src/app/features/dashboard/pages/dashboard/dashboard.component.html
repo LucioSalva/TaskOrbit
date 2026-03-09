@@ -1,0 +1,350 @@
+<div class="dashboard-layout">
+  <header class="topbar d-flex align-items-center justify-content-between px-3 px-lg-4 py-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="brand">
+        <span class="brand-text">TaskOrbit</span>
+      </div>
+      <span class="role-pill d-none d-md-inline-block">{{ userRole() }}</span>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <div class="text-end d-none d-md-block">
+        <div class="fw-semibold text-white">{{ currentUser()?.nombre_completo }}</div>
+        <div class="text-muted small">{{ currentUser()?.username }}</div>
+      </div>
+      <button class="btn btn-ghost" type="button" (click)="logout()">
+        <i class="bi bi-box-arrow-right"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="layout-body">
+    <aside class="sidebar d-none d-lg-flex">
+      <div class="sidebar-shell">
+        <div class="sidebar-brand">
+          <div class="brand-icon">
+            <i class="bi bi-box-seam"></i>
+          </div>
+          <span class="brand-name">TaskOrbit</span>
+        </div>
+        <div class="nav-section">
+          <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-speedometer2"></i>
+            <span>Dashboard</span>
+          </a>
+          <a routerLink="/proyectos" routerLinkActive="active" class="nav-link" *ngIf="isUser() || isAdminOrGod()">
+            <i class="bi bi-kanban"></i>
+            <span>Proyectos</span>
+          </a>
+          <a routerLink="/notas" routerLinkActive="active" class="nav-link">
+            <i class="bi bi-journal-text"></i>
+            <span>Notas</span>
+          </a>
+          <a routerLink="/admin/usuarios" routerLinkActive="active" class="nav-link" *ngIf="isGod()">
+            <i class="bi bi-people"></i>
+            <span>Usuarios</span>
+          </a>
+        </div>
+        <div class="sidebar-action" *ngIf="isAdminOrGod()">
+          <a class="btn btn-sm btn-outline-light w-100" routerLink="/proyectos" [queryParams]="{ create: 1 }">
+            <i class="bi bi-plus-lg"></i>
+            Nuevo proyecto
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content p-3 p-lg-4">
+      <section class="mb-4">
+        <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">
+          <div>
+            <h2 class="text-white mb-1">Dashboard operativo</h2>
+            <p class="text-muted mb-0">Visión diaria de proyectos, tareas y alertas</p>
+          </div>
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="source-pill" *ngIf="metrics()?.source === 'mock'">Datos temporales</span>
+            <span class="text-muted small" *ngIf="metrics()?.updatedAt">Actualizado {{ metrics()?.updatedAt | date:'short' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass-card p-3 p-lg-4 mb-4">
+        <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">
+          <div>
+            <h5 class="text-white mb-1">Filtros operativos</h5>
+            <p class="text-muted small mb-0">Segmenta métricas por estado, usuario y proyecto</p>
+          </div>
+          <button class="btn btn-sm btn-outline-light" type="button" (click)="clearFilters()">Limpiar filtros</button>
+        </div>
+        <div class="row g-3 mt-2">
+          <div class="col-12 col-md-4">
+            <label class="text-muted small mb-1">Estado</label>
+            <select class="form-select form-select-sm bg-dark text-white border-0" [value]="statusFilter()" (change)="onStatusFilter($event)">
+              <option value="todos">Todos</option>
+              <option value="por_hacer">Por hacer</option>
+              <option value="haciendo">Haciendo</option>
+              <option value="terminada">Terminada</option>
+              <option value="enterado">Enterado</option>
+              <option value="ocupado">Ocupado</option>
+              <option value="aceptada">Aceptada</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-4" *ngIf="isAdminOrGod()">
+            <label class="text-muted small mb-1">Usuario</label>
+            <select class="form-select form-select-sm bg-dark text-white border-0" [value]="userFilter()" (change)="onUserFilter($event)">
+              <option value="todos">Todos</option>
+              <option *ngFor="let user of availableUsers()" [value]="user.id">{{ user.nombre }}</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="text-muted small mb-1">Proyecto</label>
+            <select class="form-select form-select-sm bg-dark text-white border-0" [value]="projectFilter()" (change)="onProjectFilter($event)">
+              <option value="todos">Todos</option>
+              <option *ngFor="let project of availableProjects()" [value]="project.id">{{ project.nombre }}</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <div *ngIf="isLoading()" class="text-center text-muted py-5">Cargando métricas...</div>
+      <div *ngIf="!isLoading() && errorMessage()" class="alert alert-danger">{{ errorMessage() }}</div>
+
+      <section class="dashboard-section" *ngIf="!isLoading() && !errorMessage()">
+        <div class="row g-3">
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="kpi-card">
+              <div class="kpi-label">Proyectos activos</div>
+              <div class="kpi-value">{{ summary().proyectosActivos }}</div>
+              <span class="kpi-muted">En ejecución</span>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="kpi-card">
+              <div class="kpi-label">Tareas pendientes</div>
+              <div class="kpi-value">{{ summary().tareasPendientes }}</div>
+              <span class="kpi-muted">No terminadas</span>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="kpi-card">
+              <div class="kpi-label">Subtareas vencidas</div>
+              <div class="kpi-value">{{ summary().subtareasVencidas }}</div>
+              <span class="kpi-muted">Requieren atención</span>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="kpi-card">
+              <div class="kpi-label">Tareas terminadas</div>
+              <div class="kpi-value">{{ summary().tareasTerminadas }}</div>
+              <span class="kpi-muted">Cerradas</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-section" *ngIf="!isLoading() && !errorMessage()">
+        <div class="row g-3">
+          <div class="col-12 col-lg-6">
+            <div class="section-card p-3 p-lg-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="text-white mb-0">Productividad por proyecto</h5>
+                <span class="text-muted small">Tareas terminadas</span>
+              </div>
+              <div class="bar-chart" *ngIf="barSeries().length > 0">
+                <div class="bar-row" *ngFor="let bar of barSeries()">
+                  <div class="bar-label">{{ bar.label }}</div>
+                  <div class="bar-track">
+                    <div class="bar-fill" [style.width.%]="bar.percentage" [style.background]="bar.color"></div>
+                  </div>
+                  <div class="bar-value">{{ bar.value }}</div>
+                </div>
+              </div>
+              <div class="text-muted small" *ngIf="barSeries().length === 0">Sin datos de productividad.</div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="section-card p-3 p-lg-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="text-white mb-0">Productividad por usuario</h5>
+                <span class="text-muted small">Resumen compacto</span>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm table-dark table-borderless mb-0">
+                  <thead>
+                    <tr>
+                      <th>Usuario</th>
+                      <th class="text-end">Pendientes</th>
+                      <th class="text-end">Terminadas</th>
+                      <th class="text-end">Vencidas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of filteredProductivityByUser()">
+                      <td class="text-white">{{ item.nombre }}</td>
+                      <td class="text-end">{{ item.tareasPendientes }}</td>
+                      <td class="text-end">{{ item.tareasTerminadas }}</td>
+                      <td class="text-end">{{ item.subtareasVencidas }}</td>
+                    </tr>
+                    <tr *ngIf="filteredProductivityByUser().length === 0">
+                      <td class="text-muted" colspan="4">Sin datos para los filtros actuales.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-12 col-lg-6">
+            <div class="section-card p-3 p-lg-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="text-white mb-0">Productividad por proyecto</h5>
+                <span class="text-muted small">Detalle compacto</span>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm table-dark table-borderless mb-0">
+                  <thead>
+                    <tr>
+                      <th>Proyecto</th>
+                      <th class="text-end">Pendientes</th>
+                      <th class="text-end">Terminadas</th>
+                      <th class="text-end">Vencidas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of filteredProductivityByProject()">
+                      <td class="text-white">{{ item.nombre }}</td>
+                      <td class="text-end">{{ item.tareasPendientes }}</td>
+                      <td class="text-end">{{ item.tareasTerminadas }}</td>
+                      <td class="text-end">{{ item.subtareasVencidas }}</td>
+                    </tr>
+                    <tr *ngIf="filteredProductivityByProject().length === 0">
+                      <td class="text-muted" colspan="4">Sin datos para los filtros actuales.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="section-card p-3 p-lg-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="text-white mb-0">Productividad por tarea</h5>
+                <span class="text-muted small">Estado y avance</span>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm table-dark table-borderless mb-0">
+                  <thead>
+                    <tr>
+                      <th>Tarea</th>
+                      <th class="text-end">Progreso</th>
+                      <th class="text-end">Pendientes</th>
+                      <th class="text-end">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let task of filteredTasks()">
+                      <td class="text-white">{{ task.nombre }}</td>
+                      <td class="text-end">{{ task.progreso }}%</td>
+                      <td class="text-end">{{ task.subtareasPendientes }}</td>
+                      <td class="text-end"><app-status-badge [status]="task.estado" size="sm"></app-status-badge></td>
+                    </tr>
+                    <tr *ngIf="filteredTasks().length === 0">
+                      <td class="text-muted" colspan="4">Sin tareas para los filtros actuales.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-section" *ngIf="!isLoading() && !errorMessage()">
+        <div class="section-card p-3 p-lg-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="text-white mb-0">Alertas operativas</h5>
+            <span class="text-muted small">{{ filteredAlerts().length }} alertas activas</span>
+          </div>
+          <div class="alerts-grid">
+            <div class="alert-card" *ngFor="let alert of filteredAlerts()">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="alert-type">{{ alert.tipo }}</span>
+                <app-status-badge [status]="alert.estado" size="sm"></app-status-badge>
+              </div>
+              <div class="text-white fw-semibold mb-1">{{ alert.titulo }}</div>
+              <div class="text-muted small" *ngIf="alert.diasRestantes !== undefined">
+                {{ alert.vencido ? 'Vencido' : 'Vence en' }} {{ alert.diasRestantes }} días
+              </div>
+            </div>
+            <div class="empty-alerts" *ngIf="filteredAlerts().length === 0">
+              No hay alertas con los filtros actuales.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-section" *ngIf="!isLoading() && !errorMessage()">
+        <div class="section-card p-3 p-lg-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+              <h5 class="text-white mb-1">Centro de alertas</h5>
+              <span class="text-muted small">Historial y seguimiento interno</span>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn btn-sm btn-outline-light" type="button" (click)="markAllNotificationsRead()">Marcar todo</button>
+              <button class="btn btn-sm btn-outline-light" type="button" (click)="clearNotifications()">Limpiar</button>
+            </div>
+          </div>
+          <div class="alerts-grid" *ngIf="notifications().length > 0">
+            <div class="alert-card" *ngFor="let notification of notifications()">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="alert-type">{{ notification.severity }}</span>
+                <button class="btn btn-sm btn-outline-light" type="button" (click)="closeToast(notification)">Cerrar</button>
+              </div>
+              <div class="text-white fw-semibold mb-1">{{ notification.title }}</div>
+              <div class="text-muted small">{{ notification.message }}</div>
+              <div class="text-muted small mt-2">{{ notification.createdAt | date:'short' }}</div>
+            </div>
+          </div>
+          <div class="empty-alerts" *ngIf="notifications().length === 0">
+            Sin notificaciones registradas.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="bottom-nav d-lg-none">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-speedometer2"></i>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/proyectos" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-kanban"></i>
+      <span>Proyectos</span>
+    </a>
+    <a routerLink="/notas" routerLinkActive="active" class="nav-item">
+      <i class="bi bi-journal-text"></i>
+      <span>Notas</span>
+    </a>
+    <a routerLink="/admin/usuarios" routerLinkActive="active" class="nav-item" *ngIf="isGod()">
+      <i class="bi bi-people"></i>
+      <span>Usuarios</span>
+    </a>
+    <button class="nav-item" type="button" (click)="logout()">
+      <i class="bi bi-box-arrow-right"></i>
+      <span>Salir</span>
+    </button>
+  </nav>
+  <div class="toast-stack" *ngIf="recentToasts().length > 0">
+    <div class="alert-card" *ngFor="let toast of recentToasts()">
+      <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+        <span class="alert-type">{{ toast.severity }}</span>
+        <button class="btn btn-sm btn-outline-light" type="button" (click)="closeToast(toast)">Cerrar</button>
+      </div>
+      <div class="text-white fw-semibold small">{{ toast.title }}</div>
+      <div class="text-muted small">{{ toast.message }}</div>
+    </div>
+  </div>
+</div>

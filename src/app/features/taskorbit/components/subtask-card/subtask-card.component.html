@@ -1,0 +1,22 @@
+<div class="subtask-card">
+  <div class="d-flex align-items-center justify-content-between gap-2">
+    <div class="text-white small">{{ subtarea.nombre }}</div>
+    <app-status-badge [status]="subtarea.estado" size="sm"></app-status-badge>
+  </div>
+  <div class="action-bar mt-2" *ngIf="availableStatuses.length > 0">
+    <button
+      class="btn btn-sm btn-outline-light action-btn"
+      type="button"
+      [disabled]="!canEdit"
+      *ngFor="let status of availableStatuses"
+      (click)="onStatusChange(status)">
+      {{ getEstadoLabel(status) }}
+    </button>
+  </div>
+  <div class="action-message" *ngIf="actionMessage">{{ actionMessage }}</div>
+  <div class="action-warning" *ngIf="!canEdit">Solo puedes modificar elementos asignados.</div>
+  <div class="action-warning" *ngIf="canEdit && availableStatuses.length === 0">No hay acciones disponibles.</div>
+  <div class="d-flex justify-content-end mt-2" *ngIf="showDeleteAction">
+    <button class="btn btn-sm btn-outline-danger" type="button" (click)="onDelete()">Eliminar</button>
+  </div>
+</div>

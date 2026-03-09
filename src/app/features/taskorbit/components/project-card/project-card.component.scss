@@ -1,0 +1,77 @@
+$glass-bg: rgba(15, 23, 42, 0.6);
+
+.project-card {
+  background: $glass-bg;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.meta-chip {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.18);
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  color: #dbeafe;
+}
+
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.action-btn {
+  font-size: 0.7rem;
+}
+
+.action-message {
+  font-size: 0.75rem;
+  color: #d1fae5;
+  margin-top: 0.4rem;
+}
+
+.action-warning {
+  font-size: 0.7rem;
+  color: #fef9c3;
+  margin-top: 0.3rem;
+}
+
+.due-chip {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.due-chip.warning {
+  background: rgba(234, 179, 8, 0.18);
+  border: 1px solid rgba(234, 179, 8, 0.45);
+  color: #fef9c3;
+}
+
+.due-chip.danger {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fee2e2;
+}
+
+.progress-block {
+  font-size: 0.75rem;
+}
+
+.progress-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.85), rgba(37, 99, 235, 0.95));
+  border-radius: 999px;
+}

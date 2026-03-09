@@ -1,0 +1,21 @@
+/* You can add global styles to this file, and also import other style files */
+@use "bootstrap/scss/bootstrap";
+@use "bootstrap-icons/font/bootstrap-icons.css";
+
+:root {
+  --to-text-primary: #f8fafc;
+  --to-text-muted: #cbd5e1;
+  --to-text-subtle: #b8c4d6;
+  --to-text-strong: #ffffff;
+}
+
+body {
+  color: var(--to-text-primary);
+}
+
+.text-muted,
+.text-secondary,
+.text-body-secondary,
+.text-body-tertiary {
+  color: var(--to-text-muted) !important;
+}

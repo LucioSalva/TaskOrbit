@@ -1,0 +1,30 @@
+$glass-bg: rgba(15, 23, 42, 0.5);
+
+.subtask-card {
+  background: $glass-bg;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+}
+
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.action-btn {
+  font-size: 0.7rem;
+}
+
+.action-message {
+  font-size: 0.7rem;
+  color: #d1fae5;
+  margin-top: 0.3rem;
+}
+
+.action-warning {
+  font-size: 0.65rem;
+  color: #fef9c3;
+  margin-top: 0.25rem;
+}
