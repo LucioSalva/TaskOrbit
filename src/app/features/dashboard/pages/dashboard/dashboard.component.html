@@ -73,12 +73,17 @@
             <h5 class="text-white mb-1">Filtros operativos</h5>
             <p class="text-muted small mb-0">Segmenta métricas por estado, usuario y proyecto</p>
           </div>
-          <button class="btn btn-sm btn-outline-light" type="button" (click)="clearFilters()">Limpiar filtros</button>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-primary" type="button" (click)="applyFilters()">
+              <i class="bi bi-search me-1"></i>Buscar
+            </button>
+            <button class="btn btn-sm btn-outline-light" type="button" (click)="clearFilters()">Limpiar filtros</button>
+          </div>
         </div>
         <div class="row g-3 mt-2">
           <div class="col-12 col-md-4">
             <label class="text-muted small mb-1">Estado</label>
-            <select class="form-select form-select-sm bg-dark text-white border-0" [value]="statusFilter()" (change)="onStatusFilter($event)">
+            <select class="form-select form-select-sm bg-dark text-white border-0" [value]="tempStatusFilter()" (change)="onStatusFilter($event)">
               <option value="todos">Todos</option>
               <option value="por_hacer">Por hacer</option>
               <option value="haciendo">Haciendo</option>
@@ -90,14 +95,14 @@
           </div>
           <div class="col-12 col-md-4" *ngIf="isAdminOrGod()">
             <label class="text-muted small mb-1">Usuario</label>
-            <select class="form-select form-select-sm bg-dark text-white border-0" [value]="userFilter()" (change)="onUserFilter($event)">
+            <select class="form-select form-select-sm bg-dark text-white border-0" [value]="tempUserFilter()" (change)="onUserFilter($event)">
               <option value="todos">Todos</option>
               <option *ngFor="let user of availableUsers()" [value]="user.id">{{ user.nombre }}</option>
             </select>
           </div>
           <div class="col-12 col-md-4">
             <label class="text-muted small mb-1">Proyecto</label>
-            <select class="form-select form-select-sm bg-dark text-white border-0" [value]="projectFilter()" (change)="onProjectFilter($event)">
+            <select class="form-select form-select-sm bg-dark text-white border-0" [value]="tempProjectFilter()" (change)="onProjectFilter($event)">
               <option value="todos">Todos</option>
               <option *ngFor="let project of availableProjects()" [value]="project.id">{{ project.nombre }}</option>
             </select>
@@ -261,7 +266,7 @@
       </section>
 
       <section class="dashboard-section" *ngIf="!isLoading() && !errorMessage()">
-        <div class="section-card p-3 p-lg-4">
+        <div #notificationsCenter class="section-card p-3 p-lg-4" tabindex="-1">
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h5 class="text-white mb-0">Alertas operativas</h5>
             <span class="text-muted small">{{ filteredAlerts().length }} alertas activas</span>
@@ -270,7 +275,10 @@
             <div class="alert-card" *ngFor="let alert of filteredAlerts()">
               <div class="d-flex align-items-center justify-content-between mb-2">
                 <span class="alert-type">{{ alert.tipo }}</span>
-                <app-status-badge [status]="alert.estado" size="sm"></app-status-badge>
+                <div class="d-flex align-items-center gap-2">
+                  <app-status-badge [status]="alert.estado" size="sm"></app-status-badge>
+                  <button class="btn btn-sm btn-outline-light" type="button" (click)="hideOperationalAlert(alert)">No volver a mostrar</button>
+                </div>
               </div>
               <div class="text-white fw-semibold mb-1">{{ alert.titulo }}</div>
               <div class="text-muted small" *ngIf="alert.diasRestantes !== undefined">
@@ -285,7 +293,7 @@
       </section>
 
       <section class="dashboard-section" *ngIf="!isLoading() && !errorMessage()">
-        <div class="section-card p-3 p-lg-4">
+        <div #notificationsCenter class="section-card p-3 p-lg-4" tabindex="-1">
           <div class="d-flex align-items-center justify-content-between mb-3">
             <div>
               <h5 class="text-white mb-1">Centro de alertas</h5>
@@ -297,14 +305,35 @@
             </div>
           </div>
           <div class="alerts-grid" *ngIf="notifications().length > 0">
-            <div class="alert-card" *ngFor="let notification of notifications()">
+            <div class="alert-card notification-center-card" [class]="'severity-' + notification.severity" *ngFor="let notification of notifications()">
               <div class="d-flex align-items-center justify-content-between mb-2">
                 <span class="alert-type">{{ notification.severity }}</span>
-                <button class="btn btn-sm btn-outline-light" type="button" (click)="closeToast(notification)">Cerrar</button>
+                <div class="d-flex align-items-center gap-2">
+                  <button class="btn btn-sm btn-outline-light" type="button" (click)="hideNotification(notification)">No volver a mostrar</button>
+                  <button class="btn btn-sm btn-outline-light" type="button" (click)="closeToast(notification)">Cerrar</button>
+                </div>
               </div>
               <div class="text-white fw-semibold mb-1">{{ notification.title }}</div>
               <div class="text-muted small">{{ notification.message }}</div>
               <div class="text-muted small mt-2">{{ notification.createdAt | date:'short' }}</div>
+            </div>
+          </div>
+          <div class="hidden-alerts-panel mt-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="text-white mb-0">Alertas ocultas</h6>
+              <button class="btn btn-sm btn-outline-light" type="button" (click)="clearHiddenAlerts()" [disabled]="hiddenAlertEntries().length === 0">Restablecer todas</button>
+            </div>
+            <div class="hidden-alerts-list" *ngIf="hiddenAlertEntries().length > 0">
+              <div class="hidden-alert-row" *ngFor="let hidden of hiddenAlertEntries()">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="alert-type">{{ hidden.severity }}</span>
+                  <span class="text-muted small">{{ hidden.title }}</span>
+                </div>
+                <button class="btn btn-sm btn-outline-light" type="button" (click)="showHiddenAlert(hidden.id)">Mostrar</button>
+              </div>
+            </div>
+            <div class="empty-alerts" *ngIf="hiddenAlertEntries().length === 0">
+              No hay alertas ocultas.
             </div>
           </div>
           <div class="empty-alerts" *ngIf="notifications().length === 0">
@@ -337,11 +366,23 @@
       <span>Salir</span>
     </button>
   </nav>
-  <div class="toast-stack" *ngIf="recentToasts().length > 0">
-    <div class="alert-card" *ngFor="let toast of recentToasts()">
+  <div class="toast-backdrop" *ngIf="hasPersistentToasts()"></div>
+  <div
+    #toastStack
+    class="toast-stack"
+    *ngIf="recentToasts().length > 0"
+    role="region"
+    aria-live="polite"
+    aria-label="Alertas recientes"
+    (keydown)="onToastStackKeydown($event)">
+    <div class="alert-card toast-card" [class]="'severity-' + toast.severity" *ngFor="let toast of recentToasts()" [attr.role]="toast.severity === 'danger' ? 'alert' : 'status'" [attr.aria-live]="toast.severity === 'danger' ? 'assertive' : 'polite'">
       <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
         <span class="alert-type">{{ toast.severity }}</span>
-        <button class="btn btn-sm btn-outline-light" type="button" (click)="closeToast(toast)">Cerrar</button>
+        <div class="d-flex align-items-center gap-2">
+          <button class="alert-action-btn" type="button" (click)="focusNotificationCenter()">Ver alertas</button>
+          <button class="alert-action-btn" type="button" (click)="hideNotification(toast)">No volver a mostrar</button>
+          <button class="alert-close-btn" type="button" (click)="closeToast(toast)">Cerrar</button>
+        </div>
       </div>
       <div class="text-white fw-semibold small">{{ toast.title }}</div>
       <div class="text-muted small">{{ toast.message }}</div>

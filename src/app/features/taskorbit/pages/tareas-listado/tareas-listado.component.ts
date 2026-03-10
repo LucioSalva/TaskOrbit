@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink, RouterLinkActive, ActivatedRoute } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -397,14 +398,22 @@ export class TareasListadoComponent implements OnInit {
     }
     const previous = task.estado;
     this.tasks.update((items) => items.map((item) => (item.id === task.id ? { ...item, estado: next } : item)));
-    this.changeTracker.trackChange({
-      entityType: 'tarea',
-      entityId: task.id,
-      previous,
-      next,
-      userId: this.currentUserId()
+    this.tareasService.updateTarea(task.id, { estado: next }).subscribe({
+      next: () => {
+        this.changeTracker.trackChange({
+          entityType: 'tarea',
+          entityId: task.id,
+          previous,
+          next,
+          userId: this.currentUserId()
+        });
+        this.setTaskMessage(task.id, `Estado actualizado a ${getEstadoLabel(next)}.`);
+      },
+      error: () => {
+        this.tasks.update((items) => items.map((item) => (item.id === task.id ? { ...item, estado: previous } : item)));
+        this.setTaskMessage(task.id, 'No se pudo actualizar el estado.');
+      }
     });
-    this.setTaskMessage(task.id, `Estado actualizado a ${getEstadoLabel(next)}.`);
   }
 
   onSubtaskStatusChange(task: Tarea, subtask: Subtarea, next: EstadoTarea): void {
@@ -412,19 +421,43 @@ export class TareasListadoComponent implements OnInit {
       this.setSubtaskMessage(task.id, subtask.id, 'Acción no permitida.');
       return;
     }
+    const subtaskId = Number(subtask.id);
+    if (!Number.isInteger(subtaskId) || subtaskId <= 0) {
+      this.setSubtaskMessage(task.id, subtask.id, 'No se pudo actualizar: ID de subtarea inválido.');
+      return;
+    }
     const previous = subtask.estado;
     this.subtasksByTask.update((state) => ({
       ...state,
-      [task.id]: (state[task.id] || []).map((item) => (item.id === subtask.id ? { ...item, estado: next } : item))
+      [task.id]: (state[task.id] || []).map((item) => (item.id === subtaskId ? { ...item, estado: next } : item))
     }));
-    this.changeTracker.trackChange({
-      entityType: 'subtarea',
-      entityId: subtask.id,
-      previous,
-      next,
-      userId: this.currentUserId()
+    this.subtareasService.updateSubtarea(subtaskId, { estado: next }).subscribe({
+      next: () => {
+        this.changeTracker.trackChange({
+          entityType: 'subtarea',
+          entityId: subtaskId,
+          previous,
+          next,
+          userId: this.currentUserId()
+        });
+        this.setSubtaskMessage(task.id, subtaskId, `Estado actualizado a ${getEstadoLabel(next)}.`);
+      },
+      error: (error) => {
+        if (error instanceof HttpErrorResponse) {
+          console.error('Subtask update failed', {
+            status: error.status,
+            url: error.url,
+            subtaskId,
+            response: error.error
+          });
+        }
+        this.subtasksByTask.update((state) => ({
+          ...state,
+          [task.id]: (state[task.id] || []).map((item) => (item.id === subtaskId ? { ...item, estado: previous } : item))
+        }));
+        this.setSubtaskMessage(task.id, subtaskId, this.resolveSubtaskUpdateMessage(error, subtaskId));
+      }
     });
-    this.setSubtaskMessage(task.id, subtask.id, `Estado actualizado a ${getEstadoLabel(next)}.`);
   }
 
   private setTaskMessage(taskId: number, message: string): void {
@@ -452,5 +485,24 @@ export class TareasListadoComponent implements OnInit {
         return rest;
       });
     }, 2200);
+  }
+
+  private resolveSubtaskUpdateMessage(error: unknown, subtaskId: number): string {
+    if (error instanceof HttpErrorResponse) {
+      const backendMessage = typeof error.error?.message === 'string' ? error.error.message : null;
+      if (error.status === 404) {
+        return backendMessage ?? `Subtarea ${subtaskId} no encontrada para actualizar.`;
+      }
+      if (error.status === 403) {
+        return backendMessage ?? 'No tienes permiso para actualizar esta subtarea.';
+      }
+      if (error.status === 401) {
+        return 'Tu sesión expiró. Inicia sesión de nuevo.';
+      }
+      if (backendMessage) {
+        return backendMessage;
+      }
+    }
+    return 'No se pudo actualizar el estado.';
   }
 }

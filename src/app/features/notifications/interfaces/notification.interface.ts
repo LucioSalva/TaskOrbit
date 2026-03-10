@@ -5,7 +5,7 @@ export type NotificationType =
   | 'por_vencer'
   | 'vencido';
 
-export type NotificationSeverity = 'info' | 'warning' | 'danger';
+export type NotificationSeverity = 'info' | 'success' | 'warning' | 'danger';
 export type NotificationSource = 'mock' | 'local' | 'api';
 export type NotificationChannel = 'in_app' | 'whatsapp';
 
@@ -23,6 +23,8 @@ export interface NotificationItem {
   createdAt: string;
   read: boolean;
   severity: NotificationSeverity;
+  autoDismissMs?: number | null;
+  persistent?: boolean;
   source: NotificationSource;
   channel: NotificationChannel;
   entity?: NotificationEntityRef;

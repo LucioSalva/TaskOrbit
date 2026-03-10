@@ -8,6 +8,8 @@ router.use(authMiddleware);
 
 router.get('/', subtareasController.getSubtareas);
 router.post('/', subtareasController.createSubtarea);
+router.put('/:id', subtareasController.updateSubtarea);
+router.patch('/:id', subtareasController.updateSubtarea);
 router.get('/:id/delete-preview', roleMiddleware('ADMIN', 'GOD'), subtareasController.getSubtareaDeletePreview);
 router.delete('/:id', roleMiddleware('ADMIN', 'GOD'), subtareasController.deleteSubtarea);
 

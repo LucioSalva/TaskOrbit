@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, throwError } from 'rxjs';
 import { Subtarea } from '../interfaces/subtarea.interface';
 
 interface ApiResponse<T> {
@@ -26,6 +26,15 @@ export class SubtareasService {
 
   createSubtarea(payload: Partial<Subtarea> & { tareaId: number }): Observable<Subtarea> {
     return this.http.post<ApiResponse<Subtarea>>(`${this.TASK_URL}/${payload.tareaId}/subtareas`, payload)
+      .pipe(map(response => response.data));
+  }
+
+  updateSubtarea(id: number, payload: Partial<Subtarea>): Observable<Subtarea> {
+    const subtaskId = Number(id);
+    if (!Number.isInteger(subtaskId) || subtaskId <= 0) {
+      return throwError(() => new Error('ID de subtarea inválido para actualización.'));
+    }
+    return this.http.put<ApiResponse<Subtarea>>(`${this.SUBTASK_URL}/${subtaskId}`, payload)
       .pipe(map(response => response.data));
   }
 
