@@ -21,9 +21,22 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Configuración de Middlewares
-app.use(cors()); // Habilita CORS para Angular
-app.use(express.json()); // Parser para JSON bodies
-app.use(express.urlencoded({ extended: true }));
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:4200', 'http://localhost:3000'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS bloqueado para origen: ${origin}`));
+    }
+  },
+  credentials: true
+}));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Servir archivos estáticos del frontend (Angular)
 app.use(express.static(path.join(__dirname, '../dist/task-orbit/browser')));
@@ -40,7 +53,7 @@ app.use('/api/dashboard', dashboardRoutes);
 
 // Ruta base API (opcional, para verificar estado)
 app.get('/api', (req, res) => {
-  res.send('TaskOrbit API is running');
+  res.json({ status: 'ok', app: 'TaskOrbit API', version: '1.0.0' });
 });
 
 app.use('/api', notFoundHandler);

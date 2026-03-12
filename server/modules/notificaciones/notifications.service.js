@@ -42,15 +42,15 @@ const createNotification = async ({
   entityId = null
 }) => {
   const status = channel === 'in_app' ? 'sent' : 'queued';
-  const deliveredAt = channel === 'in_app' ? 'CURRENT_TIMESTAMP' : null;
+  const deliveredAt = channel === 'in_app' ? new Date() : null;
   const query = `
     INSERT INTO notifications
       (user_id, type, title, message, severity, channel, entity_type, entity_id, status, delivered_at)
     VALUES
-      ($1, $2, $3, $4, $5, $6, $7, $8, $9, ${deliveredAt ? deliveredAt : 'NULL'})
+      ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     RETURNING id, user_id, type, title, message, severity, channel, entity_type, entity_id, read, status, created_at, delivered_at
   `;
-  const params = [userId, type, title, message, severity, channel, entityType, entityId, status];
+  const params = [userId, type, title, message, severity, channel, entityType, entityId, status, deliveredAt];
   const result = await db.query(query, params);
   const notification = result.rows[0];
   if (channel === 'in_app') {

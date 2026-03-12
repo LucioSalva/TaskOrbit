@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:/Users/lua22/Desktop/ecatepec/ProyectoOne/TaskOrbit/server\" && node -e \"\nconst bcrypt = require\\('bcrypt'\\);\nconst { Pool } = require\\('pg'\\);\n\nconst pool = new Pool\\({\n  user: 'postgres',\n  host: 'localhost',\n  database: 'TaskOrbit',\n  password: 'admin',\n  port: 5432\n}\\);\n\n\\(async \\(\\) => {\n  const client = await pool.connect\\(\\);\n  try {\n    const hash = await bcrypt.hash\\('Luc1@2488', 12\\);\n\n    await client.query\\('BEGIN'\\);\n\n    // Insertar usuario\n    const userRes = await client.query\\(\n      \\\\`INSERT INTO usuarios \\(nombre_completo, username, password_hash, activo\\)\n       VALUES \\(\\\\$1, \\\\$2, \\\\$3, true\\)\n       ON CONFLICT \\(username\\) DO UPDATE SET password_hash = EXCLUDED.password_hash, nombre_completo = EXCLUDED.nombre_completo\n       RETURNING id, username, nombre_completo\\\\`,\n      ['Lucifer 666', 'lucifer', hash]\n    \\);\n    const user = userRes.rows[0];\n\n    // Obtener ID del rol GOD\n    const roleRes = await client.query\\(\\\\\"SELECT id FROM roles WHERE UPPER\\(nombre\\) = 'GOD'\\\\\"\\);\n    if \\(roleRes.rows.length === 0\\) throw new Error\\('Rol GOD no encontrado en BD'\\);\n    const rolId = roleRes.rows[0].id;\n\n    // Asignar rol GOD \\(ignorar si ya existe\\)\n    await client.query\\(\n      'INSERT INTO usuarios_roles \\(usuario_id, rol_id\\) VALUES \\(\\\\$1, \\\\$2\\) ON CONFLICT DO NOTHING',\n      [user.id, rolId]\n    \\);\n\n    await client.query\\('COMMIT'\\);\n    console.log\\('OK:', JSON.stringify\\(user\\)\\);\n  } catch \\(err\\) {\n    await client.query\\('ROLLBACK'\\);\n    console.error\\('ERROR:', err.message\\);\n  } finally {\n    client.release\\(\\);\n    await pool.end\\(\\);\n  }\n}\\)\\(\\);\n\")",
+      "Bash(find /c/Users/lua22/Desktop/ecatepec/ProyectoOne/TaskOrbit/server -name \"*tareas*\" -type f 2>/dev/null | head -20)",
+      "Bash(head -100 \"/c/Users/lua22/Desktop/ecatepec/ProyectoOne/TaskOrbit/TaskOrbit.sql\" 2>/dev/null || find /c/Users/lua22/Desktop/ecatepec/ProyectoOne/TaskOrbit -name \"*.sql\" 2>/dev/null | head -5)",
+      "Bash(psql -U postgres -d TaskOrbit -c \"\\\\d usuarios\" 2>/dev/null || psql -U postgres -d \"TaskOrbit\" -c \"\\\\d usuarios\" 2>/dev/null)",
+      "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql\" -U postgres -d TaskOrbit -c \"\\\\d usuarios\" 2>/dev/null)",
+      "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql.exe\" -U postgres -d TaskOrbit -c \"\\\\d usuarios\" 2>&1; echo \"EXIT: $?\")"
+    ]
+  }
+}

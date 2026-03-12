@@ -16,8 +16,7 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  console.error('Error inesperado en el cliente de base de datos', err);
-  process.exit(-1);
+  console.error('Error inesperado en el cliente de base de datos:', err.message);
 });
 
 module.exports = {

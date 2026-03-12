@@ -1,15 +1,7 @@
 const db = require('../../config/db');
 const { success, fail } = require('../../utils/responses');
 const { isNumericId } = require('../../utils/validators');
-
-const normalizeRole = (role) => {
-  const raw = String(role ?? '').trim().toUpperCase();
-  if (!raw) return raw;
-  if (raw.includes('GOD')) return 'GOD';
-  if (raw.startsWith('ADMIN') || raw.includes('ADMINISTR') || raw === 'ADM') return 'ADMIN';
-  if (raw.startsWith('USER') || raw.startsWith('USUARIO') || raw.startsWith('USUAR')) return 'USER';
-  return raw;
-};
+const { normalizeRole } = require('../../utils/role');
 
 const resolveRole = (req) => {
   const normalized = normalizeRole(req?.user?.rol);
@@ -147,9 +139,9 @@ const getMetrics = async (req, res, next) => {
     let users = [];
     if (role === 'ADMIN' || role === 'GOD') {
       const usersResult = await db.query(`
-        SELECT id, COALESCE(nombre_completo, username) as nombre 
-        FROM usuarios 
-        WHERE activo = true 
+        SELECT id, username, COALESCE(nombre_completo, username) as nombre
+        FROM usuarios
+        WHERE activo = true
         ORDER BY nombre ASC
       `);
       users = usersResult.rows;
@@ -184,7 +176,7 @@ const getMetrics = async (req, res, next) => {
       fechaInicio: t.fecha_inicio,
       fechaFin: t.fecha_fin,
       proyectoId: t.proyecto_id,
-      usuarioAsignadoId: t.usuario_asignado_id,
+      usuarioAsignadoId: t.effective_user_id ?? t.usuario_asignado_id,
       estimacionMinutos: t.estimacion_minutos
     });
 
@@ -201,12 +193,13 @@ const getMetrics = async (req, res, next) => {
     const formattedSubtasks = subtasks.map(mapSubtask);
 
     // Productivity by Task (Needed for frontend table)
+    const userUsernameMap = new Map(users.map(u => [String(u.id), u.username ?? u.nombre]));
     const productivityByTask = formattedTasks.map(task => {
         const taskSubtasks = formattedSubtasks.filter(s => s.tareaId === task.id);
         const total = taskSubtasks.length;
         const done = taskSubtasks.filter(s => s.estado === 'terminada').length;
         const progress = total > 0 ? Math.round((done / total) * 100) : (task.estado === 'terminada' ? 100 : 0);
-        
+
         // Simple overdue check (could be improved)
         const isOverdue = task.fechaFin && new Date(task.fechaFin) < new Date() && task.estado !== 'terminada';
         const vencidas = isOverdue ? taskSubtasks.filter(s => s.estado !== 'terminada').length : 0;
@@ -215,6 +208,7 @@ const getMetrics = async (req, res, next) => {
             taskId: task.id,
             projectId: task.proyectoId,
             userId: task.usuarioAsignadoId,
+            username: task.usuarioAsignadoId != null ? (userUsernameMap.get(String(task.usuarioAsignadoId)) ?? null) : null,
             nombre: task.nombre,
             estado: task.estado,
             progreso: progress,

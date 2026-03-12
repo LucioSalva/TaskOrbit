@@ -158,10 +158,11 @@ export class ProyectoDetalleComponent implements OnInit {
       return false;
     }
     const role = this.userRole();
-    if (role === 'GOD' || role === 'ADMIN') {
+    if (role === 'GOD') {
       return true;
     }
-    return false;
+    // ADMIN y USER: solo si el proyecto está asignado a ellos mismos
+    return project.usuarioAsignadoId === userId;
   }
 
   onProjectStatusChange(project: Proyecto, next: EstadoTarea): void {
@@ -231,13 +232,11 @@ export class ProyectoDetalleComponent implements OnInit {
       return false;
     }
     const role = this.userRole();
-    if (role === 'GOD' || role === 'ADMIN') {
+    if (role === 'GOD') {
       return true;
     }
-    if (role === 'USER') {
-      return this.getTaskAssignedUserId(task) === userId;
-    }
-    return false;
+    // ADMIN y USER: solo si la tarea (o el proyecto) está asignado a ellos
+    return this.getTaskAssignedUserId(task) === userId;
   }
 
   canEditSubtask(task: Tarea): boolean {
@@ -246,13 +245,11 @@ export class ProyectoDetalleComponent implements OnInit {
       return false;
     }
     const role = this.userRole();
-    if (role === 'GOD' || role === 'ADMIN') {
+    if (role === 'GOD') {
       return true;
     }
-    if (role === 'USER') {
-      return this.getTaskAssignedUserId(task) === userId;
-    }
-    return false;
+    // ADMIN y USER: solo si la tarea padre está asignada a ellos
+    return this.getTaskAssignedUserId(task) === userId;
   }
 
   canManageTask(): boolean {

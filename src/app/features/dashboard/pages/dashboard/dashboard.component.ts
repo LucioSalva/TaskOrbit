@@ -95,11 +95,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       return [];
     }
     const tasks = this.filteredTasks();
+    const UNASSIGNED_KEY = 0;
     const grouped = new Map<number, DashboardProductivityUser>();
     tasks.forEach((task) => {
-      const base = grouped.get(task.userId) ?? {
-        userId: task.userId,
-        nombre: metrics.users.find((user) => user.id === task.userId)?.nombre ?? `Usuario ${task.userId}`,
+      const uid = task.userId ?? UNASSIGNED_KEY;
+      const nombre = task.username ?? (uid === UNASSIGNED_KEY ? 'Sin asignar' : `Usuario ${uid}`);
+      const base = grouped.get(uid) ?? {
+        userId: uid,
+        nombre,
         tareasPendientes: 0,
         tareasTerminadas: 0,
         subtareasVencidas: 0
@@ -110,7 +113,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         base.tareasPendientes += 1;
       }
       base.subtareasVencidas += task.subtareasVencidas;
-      grouped.set(task.userId, base);
+      grouped.set(uid, base);
     });
     return Array.from(grouped.values());
   });

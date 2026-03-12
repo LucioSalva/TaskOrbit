@@ -293,7 +293,7 @@ const toggleEstado = async (req, res, next) => {
     }
 
     // 2. Verificar usuario objetivo
-    const targetUserQuery = await db.query('SELECT rol FROM vw_usuarios_roles WHERE id = $1', [id]);
+    const targetUserQuery = await db.query('SELECT rol, activo FROM vw_usuarios_roles WHERE id = $1', [id]);
     if (targetUserQuery.rows.length === 0) {
       return fail(res, 'Usuario no encontrado', null, 404);
     }

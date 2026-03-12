@@ -144,13 +144,11 @@ export class TareasListadoComponent implements OnInit {
       return false;
     }
     const role = this.userRole();
-    if (role === 'GOD' || role === 'ADMIN') {
+    if (role === 'GOD') {
       return true;
     }
-    if (role === 'USER') {
-      return this.getTaskAssignedUserId(task) === userId;
-    }
-    return false;
+    // ADMIN y USER: solo si la tarea (o el proyecto) está asignado a ellos
+    return this.getTaskAssignedUserId(task) === userId;
   }
 
   canManageTask(task: Tarea): boolean {
@@ -171,13 +169,11 @@ export class TareasListadoComponent implements OnInit {
       return false;
     }
     const role = this.userRole();
-    if (role === 'GOD' || role === 'ADMIN') {
+    if (role === 'GOD') {
       return true;
     }
-    if (role === 'USER') {
-      return this.getTaskAssignedUserId(task) === userId;
-    }
-    return false;
+    // ADMIN y USER: solo si la tarea padre está asignada a ellos
+    return this.getTaskAssignedUserId(task) === userId;
   }
 
   canManageSubtask(): boolean {

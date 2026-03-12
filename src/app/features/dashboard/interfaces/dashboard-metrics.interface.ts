@@ -32,7 +32,8 @@ export interface DashboardProductivityProject {
 export interface DashboardProductivityTask {
   taskId: number;
   projectId: number;
-  userId: number;
+  userId: number | null;
+  username: string | null;
   nombre: string;
   estado: EstadoTarea;
   progreso: number;
@@ -54,6 +55,7 @@ export interface DashboardAlert {
 export interface DashboardEntityRef {
   id: number;
   nombre: string;
+  username?: string;
 }
 
 export interface DashboardMetrics {

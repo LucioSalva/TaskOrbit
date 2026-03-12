@@ -53,7 +53,10 @@ export const routes: Routes = [
   {
     path: 'notas',
     loadComponent: () => import('./features/taskorbit/pages/notas/notas.component').then(m => m.NotasComponent),
-    canActivate: [authGuard]
+    canActivate: [authGuard, roleGuard],
+    data: {
+      roles: ['USER', 'ADMIN', 'GOD']
+    }
   },
 
   // Ruta /admin/usuarios protegida (Solo GOD)
