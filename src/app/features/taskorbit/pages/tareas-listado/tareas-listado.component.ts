@@ -143,11 +143,6 @@ export class TareasListadoComponent implements OnInit {
     if (userId === null) {
       return false;
     }
-    const role = this.userRole();
-    if (role === 'GOD') {
-      return true;
-    }
-    // ADMIN y USER: solo si la tarea (o el proyecto) está asignado a ellos
     return this.getTaskAssignedUserId(task) === userId;
   }
 
@@ -163,16 +158,19 @@ export class TareasListadoComponent implements OnInit {
     return false;
   }
 
+  canDeleteTask(task: Tarea): boolean {
+    const userId = this.currentUserId();
+    if (userId === null) {
+      return false;
+    }
+    return this.userRole() === 'ADMIN';
+  }
+
   canEditSubtask(task: Tarea): boolean {
     const userId = this.currentUserId();
     if (userId === null) {
       return false;
     }
-    const role = this.userRole();
-    if (role === 'GOD') {
-      return true;
-    }
-    // ADMIN y USER: solo si la tarea padre está asignada a ellos
     return this.getTaskAssignedUserId(task) === userId;
   }
 
@@ -186,6 +184,14 @@ export class TareasListadoComponent implements OnInit {
       return true;
     }
     return false;
+  }
+
+  canDeleteSubtask(): boolean {
+    const userId = this.currentUserId();
+    if (userId === null) {
+      return false;
+    }
+    return this.userRole() === 'ADMIN';
   }
 
   private getTaskAssignedUserId(task: Tarea): number | null {
@@ -313,7 +319,7 @@ export class TareasListadoComponent implements OnInit {
   }
 
   onDeleteTask(task: Tarea): void {
-    if (!this.canManageTask(task)) {
+    if (!this.canDeleteTask(task)) {
       return;
     }
     this.formError.set(null);
@@ -352,7 +358,7 @@ export class TareasListadoComponent implements OnInit {
   }
 
   onDeleteSubtask(task: Tarea, subtask: Subtarea): void {
-    if (!this.canManageSubtask()) {
+    if (!this.canDeleteSubtask()) {
       return;
     }
     this.formError.set(null);

@@ -202,13 +202,26 @@ const createTarea = async (req, res, next) => {
     }
 
     const proyectoResult = await client.query(
-      'SELECT id, usuario_asignado_id, created_by FROM proyectos WHERE id = $1 AND deleted_at IS NULL',
+      'SELECT id, usuario_asignado_id, created_by, fecha_inicio, fecha_fin FROM proyectos WHERE id = $1 AND deleted_at IS NULL',
       [proyectoId]
     );
     if (proyectoResult.rows.length === 0) {
       return fail(res, 'Proyecto no encontrado', null, 404);
     }
     const proyecto = proyectoResult.rows[0];
+
+    // Validar que las fechas de la tarea estén dentro del rango del proyecto
+    if (fechaInicio || fechaFin) {
+      const proyInicio = proyecto.fecha_inicio ? new Date(proyecto.fecha_inicio).toISOString().split('T')[0] : null;
+      const proyFin = proyecto.fecha_fin ? new Date(proyecto.fecha_fin).toISOString().split('T')[0] : null;
+      if (fechaInicio && proyInicio && fechaInicio < proyInicio) {
+        return fail(res, 'La fecha de inicio de la tarea no puede ser anterior al inicio del proyecto', null, 400);
+      }
+      if (fechaFin && proyFin && fechaFin > proyFin) {
+        return fail(res, 'La fecha de fin de la tarea no puede ser posterior al fin del proyecto', null, 400);
+      }
+    }
+
     if (requestedUserId !== undefined && requestedUserId !== null) {
       const assignedRole = await getUserRoleById(client, requestedUserId);
       if (!assignedRole) {
@@ -315,7 +328,7 @@ const updateTarea = async (req, res, next) => {
       return fail(res, 'ID inválido', null, 400);
     }
     const currentResult = await client.query(
-      'SELECT t.*, p.usuario_asignado_id AS proyecto_usuario_asignado_id, p.created_by AS proyecto_created_by FROM tareas t JOIN proyectos p ON p.id = t.proyecto_id WHERE t.id = $1 AND t.deleted_at IS NULL AND p.deleted_at IS NULL',
+      'SELECT t.*, p.usuario_asignado_id AS proyecto_usuario_asignado_id, p.created_by AS proyecto_created_by, p.fecha_inicio AS proyecto_fecha_inicio, p.fecha_fin AS proyecto_fecha_fin FROM tareas t JOIN proyectos p ON p.id = t.proyecto_id WHERE t.id = $1 AND t.deleted_at IS NULL AND p.deleted_at IS NULL',
       [id]
     );
     if (currentResult.rows.length === 0) {
@@ -370,6 +383,19 @@ const updateTarea = async (req, res, next) => {
     const fechaFinFinal = fechaFin !== undefined ? fechaFin : current.fecha_fin;
     if (fechaInicioFinal && fechaFinFinal && new Date(fechaFinFinal) <= new Date(fechaInicioFinal)) {
       errors.push('Rango de fechas inválido');
+    }
+    // Validar fechas de tarea dentro del rango del proyecto
+    if (datesChanged) {
+      const proyInicio = current.proyecto_fecha_inicio ? new Date(current.proyecto_fecha_inicio).toISOString().split('T')[0] : null;
+      const proyFin = current.proyecto_fecha_fin ? new Date(current.proyecto_fecha_fin).toISOString().split('T')[0] : null;
+      const newInicio = fechaInicioFinal ? new Date(fechaInicioFinal).toISOString().split('T')[0] : null;
+      const newFin = fechaFinFinal ? new Date(fechaFinFinal).toISOString().split('T')[0] : null;
+      if (newInicio && proyInicio && newInicio < proyInicio) {
+        errors.push('La fecha de inicio de la tarea no puede ser anterior al inicio del proyecto');
+      }
+      if (newFin && proyFin && newFin > proyFin) {
+        errors.push('La fecha de fin de la tarea no puede ser posterior al fin del proyecto');
+      }
     }
     const estimatedMinutes = estimacionMinutos !== undefined
       ? estimacionMinutos

@@ -137,9 +137,12 @@ export class ProyectosListadoComponent implements OnInit {
       )
       .subscribe((data) => {
         const userId = this.currentUserId();
-        const filtered = this.isLimitedRole() && userId !== null
-          ? data.filter((project) => project.usuarioAsignadoId === userId)
-          : data;
+        let filtered = data;
+        if (this.isUser() && userId !== null) {
+          filtered = data.filter((project) => project.usuarioAsignadoId === userId);
+        } else if (this.isAdmin() && userId !== null) {
+          filtered = data.filter((project) => project.createdBy === userId);
+        }
         console.info('ProyectosListado:projectsLoaded', {
           received: data.length,
           filtered: filtered.length,
@@ -163,18 +166,22 @@ export class ProyectosListadoComponent implements OnInit {
 
   canEditProject(project: Proyecto): boolean {
     const userId = this.currentUserId();
-    if (userId === null) {
-      return false;
-    }
+    if (userId === null) return false;
     const role = this.userRole();
-    if (role === 'GOD' || role === 'ADMIN') {
-      return true;
-    }
-    return false;
+    if (role === 'GOD') return true;
+    // Solo el usuario asignado puede cambiar el estado del proyecto
+    return project.usuarioAsignadoId === userId;
   }
 
   canManageProject(project: Proyecto): boolean {
-    return this.canEditProject(project);
+    const role = this.userRole();
+    if (role === 'GOD' || role === 'ADMIN') return true;
+    return false;
+  }
+
+  canDeleteProject(project: Proyecto): boolean {
+    const role = this.userRole();
+    return role === 'GOD' || role === 'ADMIN'; // Solo ADMIN/GOD pueden eliminar
   }
 
   openCreateProject(): void {
@@ -251,7 +258,7 @@ export class ProyectosListadoComponent implements OnInit {
   }
 
   onDeleteProject(project: Proyecto): void {
-    if (!this.canEditProject(project)) {
+    if (!this.canDeleteProject(project)) {
       return;
     }
     this.formError.set(null);

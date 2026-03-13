@@ -101,7 +101,7 @@
               <a class="btn btn-sm btn-outline-light" [routerLink]="['/proyectos', project.id, 'tareas']">
                 Ver tareas
               </a>
-              <button class="btn btn-sm btn-outline-danger" type="button" *ngIf="canEditProject(project)" (click)="onDeleteProject(project)">
+              <button class="btn btn-sm btn-outline-danger" type="button" *ngIf="canDeleteProject(project)" (click)="onDeleteProject(project)">
                 Eliminar proyecto
               </button>
             </div>
@@ -185,6 +185,8 @@
         [taskToEdit]="null"
         [taskId]="selectedParentTask()?.id ?? null"
         [mode]="'subtarea'"
+        [parentFechaInicio]="selectedParentTask()?.fechaInicio ?? null"
+        [parentFechaFin]="selectedParentTask()?.fechaFin ?? null"
         (close)="closeSubtaskModal()"
         (save)="onSaveSubtask($event)">
       </app-task-form-modal>

@@ -34,6 +34,8 @@ export class TaskFormModalComponent implements OnChanges {
   @Input() projectId: number | null = null;
   @Input() taskId: number | null = null;
   @Input() mode: TaskFormMode = 'tarea';
+  @Input() parentFechaInicio: string | null = null;
+  @Input() parentFechaFin: string | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<TaskFormPayload>();
 
@@ -81,6 +83,7 @@ export class TaskFormModalComponent implements OnChanges {
           fechaInicio: this.taskToEdit.fechaInicio ?? '',
           fechaFin: this.taskToEdit.fechaFin ?? ''
         });
+        this.taskForm.get('estado')?.enable();
       } else {
         this.isEditMode.set(false);
         this.taskForm.reset({
@@ -91,6 +94,7 @@ export class TaskFormModalComponent implements OnChanges {
           fechaInicio: '',
           fechaFin: ''
         });
+        this.taskForm.get('estado')?.disable();
       }
       this.headerLabel.set(this.getHeaderLabel());
       this.submitLabel.set(this.getSubmitLabel());
@@ -100,6 +104,32 @@ export class TaskFormModalComponent implements OnChanges {
 
   getEstadoLabel(status: EstadoTarea): string {
     return getEstadoLabel(status);
+  }
+
+  get parentRangeError(): string | null {
+    const start = this.taskForm.get('fechaInicio')?.value as string | null;
+    const end = this.taskForm.get('fechaFin')?.value as string | null;
+    if (!start && !end) {
+      return null;
+    }
+    const pStart = this.parseDate(this.parentFechaInicio);
+    const pEnd = this.parseDate(this.parentFechaFin);
+    const startDate = this.parseDate(start);
+    const endDate = this.parseDate(end);
+    const label = this.mode === 'subtarea' ? 'tarea' : 'proyecto';
+    if (pStart && startDate && startDate < pStart) {
+      return `La fecha de inicio no puede ser anterior al inicio del ${label}.`;
+    }
+    if (pEnd && startDate && startDate > pEnd) {
+      return `La fecha de inicio supera el fin del ${label}.`;
+    }
+    if (pEnd && endDate && endDate > pEnd) {
+      return `La fecha de fin no puede ser posterior al fin del ${label}.`;
+    }
+    if (pStart && endDate && endDate < pStart) {
+      return `La fecha de fin no puede ser anterior al inicio del ${label}.`;
+    }
+    return null;
   }
 
   onClose(): void {
@@ -120,8 +150,13 @@ export class TaskFormModalComponent implements OnChanges {
       this.taskForm.markAllAsTouched();
       return;
     }
-    const value = this.taskForm.value;
+    if (this.parentRangeError) {
+      this.taskForm.markAllAsTouched();
+      return;
+    }
+    const value = this.taskForm.getRawValue();
     const estimacionMinutos = this.getEstimatedMinutes();
+    const estadoFinal = this.isEditMode() ? (value.estado as EstadoTarea) : 'por_hacer';
     this.save.emit({
       tipo: this.mode,
       proyectoId: this.mode === 'tarea' ? this.projectId ?? undefined : undefined,
@@ -129,7 +164,7 @@ export class TaskFormModalComponent implements OnChanges {
       nombre: value.nombre as string,
       descripcion: value.descripcion || null,
       prioridad: value.prioridad as PrioridadTarea,
-      estado: value.estado as EstadoTarea,
+      estado: estadoFinal,
       fechaInicio: value.fechaInicio || null,
       fechaFin: value.fechaFin || null,
       estimacionMinutos
@@ -214,5 +249,16 @@ export class TaskFormModalComponent implements OnChanges {
       current.setDate(current.getDate() + 1);
     }
     return count;
+  }
+
+  private parseDate(value: string | null | undefined): Date | null {
+    if (!value) {
+      return null;
+    }
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+    return date;
   }
 }

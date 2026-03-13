@@ -20,12 +20,12 @@ export const dashboardMetricsMock: DashboardMetrics = {
       { projectId: 103, nombre: 'Capacitación', tareasPendientes: 4, tareasTerminadas: 2, subtareasVencidas: 1 }
     ],
     byTask: [
-      { taskId: 2001, projectId: 101, userId: 12, nombre: 'Pipeline semanal', estado: 'haciendo', progreso: 60, subtareasPendientes: 2, subtareasVencidas: 1 },
-      { taskId: 2002, projectId: 101, userId: 17, nombre: 'Revisión de leads', estado: 'por_hacer', progreso: 15, subtareasPendientes: 3, subtareasVencidas: 0 },
-      { taskId: 2003, projectId: 102, userId: 21, nombre: 'Validación de procesos', estado: 'ocupado', progreso: 45, subtareasPendientes: 2, subtareasVencidas: 1 },
-      { taskId: 2004, projectId: 102, userId: 12, nombre: 'Reporte operativo', estado: 'terminada', progreso: 100, subtareasPendientes: 0, subtareasVencidas: 0 },
-      { taskId: 2005, projectId: 103, userId: 17, nombre: 'Plan de capacitación', estado: 'haciendo', progreso: 35, subtareasPendientes: 2, subtareasVencidas: 0 },
-      { taskId: 2006, projectId: 103, userId: 21, nombre: 'Sesión de onboarding', estado: 'aceptada', progreso: 20, subtareasPendientes: 1, subtareasVencidas: 1 }
+      { taskId: 2001, projectId: 101, userId: 12, username: 'Ana Rivera', nombre: 'Pipeline semanal', estado: 'haciendo', progreso: 60, subtareasPendientes: 2, subtareasVencidas: 1 },
+      { taskId: 2002, projectId: 101, userId: 17, username: 'Luis Gómez', nombre: 'Revisión de leads', estado: 'por_hacer', progreso: 15, subtareasPendientes: 3, subtareasVencidas: 0 },
+      { taskId: 2003, projectId: 102, userId: 21, username: 'María Torres', nombre: 'Validación de procesos', estado: 'ocupado', progreso: 45, subtareasPendientes: 2, subtareasVencidas: 1 },
+      { taskId: 2004, projectId: 102, userId: 12, username: 'Ana Rivera', nombre: 'Reporte operativo', estado: 'terminada', progreso: 100, subtareasPendientes: 0, subtareasVencidas: 0 },
+      { taskId: 2005, projectId: 103, userId: 17, username: 'Luis Gómez', nombre: 'Plan de capacitación', estado: 'haciendo', progreso: 35, subtareasPendientes: 2, subtareasVencidas: 0 },
+      { taskId: 2006, projectId: 103, userId: 21, username: 'María Torres', nombre: 'Sesión de onboarding', estado: 'aceptada', progreso: 20, subtareasPendientes: 1, subtareasVencidas: 1 }
     ]
   },
   raw: {

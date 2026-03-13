@@ -104,6 +104,9 @@ const getProyectos = async (req, res, next) => {
     if (role === 'USER') {
       where = ' WHERE usuario_asignado_id = $1';
       params.push(req.user.id);
+    } else if (role === 'ADMIN') {
+      where = ' WHERE created_by = $1';
+      params.push(req.user.id);
     }
     const result = await db.query(`${baseQuery}${where} ORDER BY created_at DESC`, params);
     console.info('Proyectos:getProyectos:result', {
@@ -150,6 +153,14 @@ const getProyectoById = async (req, res, next) => {
         userId: req.user.id,
         role,
         assignedUserId: proyecto.usuario_asignado_id
+      });
+      return fail(res, 'Acceso denegado', null, 403);
+    }
+    if (role === 'ADMIN' && proyecto.created_by !== req.user.id) {
+      console.info('Proyectos:getProyectoById:forbidden', {
+        userId: req.user.id,
+        role,
+        createdBy: proyecto.created_by
       });
       return fail(res, 'Acceso denegado', null, 403);
     }
@@ -299,6 +310,9 @@ const updateProyecto = async (req, res, next) => {
     if (role === 'USER' && current.usuario_asignado_id !== req.user.id) {
       return fail(res, 'Acceso denegado', null, 403);
     }
+    if (role === 'ADMIN' && current.created_by !== req.user.id) {
+      return fail(res, 'Acceso denegado', null, 403);
+    }
 
     const {
       nombre,
@@ -430,6 +444,9 @@ const getProyectoDeletePreview = async (req, res, next) => {
     if (projectResult.rows.length === 0) {
       return fail(res, 'Proyecto no encontrado', null, 404);
     }
+    if (role === 'ADMIN' && projectResult.rows[0].created_by !== req.user.id) {
+      return fail(res, 'Acceso denegado', null, 403);
+    }
     const tasksResult = await db.query(
       'SELECT COUNT(*)::int AS total FROM tareas WHERE proyecto_id = $1 AND deleted_at IS NULL',
       [id]
@@ -498,6 +515,9 @@ const deleteProyecto = async (req, res, next) => {
     const currentResult = await client.query('SELECT * FROM proyectos WHERE id = $1 AND deleted_at IS NULL', [id]);
     if (currentResult.rows.length === 0) {
       return fail(res, 'Proyecto no encontrado', null, 404);
+    }
+    if (role === 'ADMIN' && currentResult.rows[0].created_by !== req.user.id) {
+      return fail(res, 'Acceso denegado', null, 403);
     }
     await client.query('BEGIN');
     const deletedAt = new Date();

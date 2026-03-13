@@ -154,15 +154,16 @@ export class ProyectoDetalleComponent implements OnInit {
 
   canEditProject(project: Proyecto): boolean {
     const userId = this.currentUserId();
-    if (userId === null) {
-      return false;
-    }
+    if (userId === null) return false;
     const role = this.userRole();
-    if (role === 'GOD') {
-      return true;
-    }
-    // ADMIN y USER: solo si el proyecto está asignado a ellos mismos
+    if (role === 'GOD') return true;
+    // Solo el usuario asignado puede cambiar el estado del proyecto
     return project.usuarioAsignadoId === userId;
+  }
+
+  canDeleteProject(project: Proyecto): boolean {
+    const role = this.userRole();
+    return role === 'GOD' || role === 'ADMIN'; // Solo ADMIN/GOD pueden eliminar
   }
 
   onProjectStatusChange(project: Proyecto, next: EstadoTarea): void {
@@ -183,7 +184,7 @@ export class ProyectoDetalleComponent implements OnInit {
   }
 
   onDeleteProject(project: Proyecto): void {
-    if (!this.canEditProject(project)) {
+    if (!this.canDeleteProject(project)) {
       return;
     }
     this.proyectosService.getDeletePreview(project.id).subscribe({
@@ -228,44 +229,42 @@ export class ProyectoDetalleComponent implements OnInit {
 
   canEditTask(task: Tarea): boolean {
     const userId = this.currentUserId();
-    if (userId === null) {
-      return false;
-    }
+    if (userId === null) return false;
     const role = this.userRole();
-    if (role === 'GOD') {
-      return true;
-    }
-    // ADMIN y USER: solo si la tarea (o el proyecto) está asignado a ellos
-    return this.getTaskAssignedUserId(task) === userId;
+    if (role === 'GOD') return true;
+    // Solo el usuario asignado puede cambiar el estado de la tarea
+    const assignedId = this.getTaskAssignedUserId(task);
+    return assignedId === userId;
+  }
+
+  canDeleteTask(task: Tarea): boolean {
+    const role = this.userRole();
+    return role === 'GOD' || role === 'ADMIN'; // Solo ADMIN/GOD pueden eliminar
   }
 
   canEditSubtask(task: Tarea): boolean {
     const userId = this.currentUserId();
-    if (userId === null) {
-      return false;
-    }
+    if (userId === null) return false;
     const role = this.userRole();
-    if (role === 'GOD') {
-      return true;
-    }
-    // ADMIN y USER: solo si la tarea padre está asignada a ellos
-    return this.getTaskAssignedUserId(task) === userId;
+    if (role === 'GOD') return true;
+    // Solo el usuario asignado puede cambiar el estado de la subtarea
+    const assignedId = this.getTaskAssignedUserId(task);
+    return assignedId === userId;
   }
 
-  canManageTask(): boolean {
-    const userId = this.currentUserId();
-    if (userId === null) {
-      return false;
-    }
+  canDeleteSubtask(task: Tarea): boolean {
     const role = this.userRole();
-    if (role === 'GOD' || role === 'ADMIN') {
-      return true;
-    }
-    return false;
+    return role === 'GOD' || role === 'ADMIN'; // Solo ADMIN/GOD pueden eliminar
   }
 
-  canManageSubtask(): boolean {
-    return this.canManageTask();
+  canManageTask(task?: Tarea): boolean {
+    const role = this.userRole();
+    return role === 'GOD' || role === 'ADMIN'; // ADMIN/GOD pueden gestionar tareas
+  }
+
+  canManageSubtask(task?: Tarea): boolean {
+    const role = this.userRole();
+    return role === 'GOD' || role === 'ADMIN'; // ADMIN/GOD pueden gestionar subtareas
   }
 
   private getTaskAssignedUserId(task: Tarea): number | null {

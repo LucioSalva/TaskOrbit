@@ -131,6 +131,8 @@
           [taskToEdit]="selectedTask()"
           [projectId]="projectId()"
           [mode]="'tarea'"
+          [parentFechaInicio]="project()?.fechaInicio ?? null"
+          [parentFechaFin]="project()?.fechaFin ?? null"
           (close)="closeTaskModal()"
           (save)="onSaveTask($event)">
         </app-task-form-modal>
@@ -140,6 +142,8 @@
           [taskToEdit]="null"
           [taskId]="selectedParentTask()?.id ?? null"
           [mode]="'subtarea'"
+          [parentFechaInicio]="selectedParentTask()?.fechaInicio ?? null"
+          [parentFechaFin]="selectedParentTask()?.fechaFin ?? null"
           (close)="closeSubtaskModal()"
           (save)="onSaveSubtask($event)">
         </app-task-form-modal>

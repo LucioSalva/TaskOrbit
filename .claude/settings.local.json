@@ -6,7 +6,8 @@
       "Bash(head -100 \"/c/Users/lua22/Desktop/ecatepec/ProyectoOne/TaskOrbit/TaskOrbit.sql\" 2>/dev/null || find /c/Users/lua22/Desktop/ecatepec/ProyectoOne/TaskOrbit -name \"*.sql\" 2>/dev/null | head -5)",
       "Bash(psql -U postgres -d TaskOrbit -c \"\\\\d usuarios\" 2>/dev/null || psql -U postgres -d \"TaskOrbit\" -c \"\\\\d usuarios\" 2>/dev/null)",
       "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql\" -U postgres -d TaskOrbit -c \"\\\\d usuarios\" 2>/dev/null)",
-      "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql.exe\" -U postgres -d TaskOrbit -c \"\\\\d usuarios\" 2>&1; echo \"EXIT: $?\")"
+      "Bash(\"/c/Program Files/PostgreSQL/17/bin/psql.exe\" -U postgres -d TaskOrbit -c \"\\\\d usuarios\" 2>&1; echo \"EXIT: $?\")",
+      "Bash(cd \"C:/Users/lucio/Desktop/creacionSoftware/TaskOrbit\" && npm install)"
     ]
   }
 }

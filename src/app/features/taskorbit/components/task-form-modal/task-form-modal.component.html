@@ -29,11 +29,16 @@
           </select>
         </div>
 
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-6" *ngIf="isEditMode()">
           <label class="form-label-glass">Estado</label>
           <select class="form-select-glass" formControlName="estado">
             <option *ngFor="let estado of estados" [value]="estado">{{ getEstadoLabel(estado) }}</option>
           </select>
+        </div>
+        <div class="col-12 col-md-6" *ngIf="!isEditMode()">
+          <label class="form-label-glass">Estado</label>
+          <div class="form-control-glass opacity-75">Por hacer</div>
+          <div class="text-muted small mt-1">Se crea con estado "Por hacer" por defecto.</div>
         </div>
 
         <div class="col-12 col-md-6">
@@ -49,6 +54,11 @@
         <div class="col-12">
           <div class="invalid-feedback-glass" *ngIf="taskForm.errors?.['invalidRange']">
             La fecha fin debe ser posterior a la fecha inicio.
+          </div>
+        </div>
+        <div class="col-12" *ngIf="parentRangeError">
+          <div class="invalid-feedback-glass d-block">
+            {{ parentRangeError }}
           </div>
         </div>
 

@@ -109,7 +109,7 @@ const createSubtarea = async (req, res, next) => {
     }
 
     const taskResult = await client.query(
-      `SELECT t.id, t.proyecto_id
+      `SELECT t.id, t.proyecto_id, t.fecha_inicio, t.fecha_fin
        FROM tareas t
        JOIN proyectos p ON p.id = t.proyecto_id
        WHERE t.id = $1 AND t.deleted_at IS NULL AND p.deleted_at IS NULL`,
@@ -117,6 +117,19 @@ const createSubtarea = async (req, res, next) => {
     );
     if (taskResult.rows.length === 0) {
       return fail(res, 'Tarea no encontrada', null, 404);
+    }
+    const task = taskResult.rows[0];
+
+    // Validar que las fechas de la subtarea estén dentro del rango de la tarea
+    if (fechaInicio || fechaFin) {
+      const taskInicio = task.fecha_inicio ? new Date(task.fecha_inicio).toISOString().split('T')[0] : null;
+      const taskFin = task.fecha_fin ? new Date(task.fecha_fin).toISOString().split('T')[0] : null;
+      if (fechaInicio && taskInicio && fechaInicio < taskInicio) {
+        return fail(res, 'La fecha de inicio de la subtarea no puede ser anterior al inicio de la tarea', null, 400);
+      }
+      if (fechaFin && taskFin && fechaFin > taskFin) {
+        return fail(res, 'La fecha de fin de la subtarea no puede ser posterior al fin de la tarea', null, 400);
+      }
     }
 
     await client.query('BEGIN');
@@ -195,7 +208,7 @@ const updateSubtarea = async (req, res, next) => {
       return fail(res, 'ID inválido', null, 400);
     }
     const currentResult = await client.query(
-      `SELECT s.*, t.usuario_asignado_id, p.usuario_asignado_id AS proyecto_usuario_asignado_id, p.created_by AS proyecto_created_by
+      `SELECT s.*, t.usuario_asignado_id, t.fecha_inicio AS tarea_fecha_inicio, t.fecha_fin AS tarea_fecha_fin, p.usuario_asignado_id AS proyecto_usuario_asignado_id, p.created_by AS proyecto_created_by
        FROM subtareas s
        JOIN tareas t ON t.id = s.tarea_id
        JOIN proyectos p ON p.id = t.proyecto_id
@@ -279,6 +292,19 @@ const updateSubtarea = async (req, res, next) => {
     const fechaFinFinal = fechaFin !== undefined ? fechaFin : current.fecha_fin;
     if (fechaInicioFinal && fechaFinFinal && new Date(fechaFinFinal) <= new Date(fechaInicioFinal)) {
       errors.push('Rango de fechas inválido');
+    }
+    // Validar fechas de subtarea dentro del rango de la tarea padre
+    if (fechaInicio !== undefined || fechaFin !== undefined) {
+      const taskInicio = current.tarea_fecha_inicio ? new Date(current.tarea_fecha_inicio).toISOString().split('T')[0] : null;
+      const taskFin = current.tarea_fecha_fin ? new Date(current.tarea_fecha_fin).toISOString().split('T')[0] : null;
+      const newInicio = fechaInicioFinal ? new Date(fechaInicioFinal).toISOString().split('T')[0] : null;
+      const newFin = fechaFinFinal ? new Date(fechaFinFinal).toISOString().split('T')[0] : null;
+      if (newInicio && taskInicio && newInicio < taskInicio) {
+        errors.push('La fecha de inicio de la subtarea no puede ser anterior al inicio de la tarea');
+      }
+      if (newFin && taskFin && newFin > taskFin) {
+        errors.push('La fecha de fin de la subtarea no puede ser posterior al fin de la tarea');
+      }
     }
     const estimatedMinutes = estimacionMinutos !== undefined
       ? estimacionMinutos
